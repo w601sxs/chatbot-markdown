@@ -1,16 +1,16 @@
 # Chatbot Markdown
 
-For businesses and developers to prototype chatbot faster without moving the mouse
+For businesses and developers to prototype chatbot faster without moving the mouse.
 
 # Bot and Human conversation
-***
+
 ```
 - Hi human! I come in peace.
 -- Reveal yourself!
 ```
 
 # Flow 
-***
+
 You're familiar with tree diagram. Each branch in the tree is a **flow**.
 
 ```
@@ -22,7 +22,7 @@ You're familiar with tree diagram. Each branch in the tree is a **flow**.
 ```
 
 # Quick replies
-***
+
 This UI element is similar to Facebook messenger.
 
 The syntax is `[button_text]: go_to_flow`.
@@ -50,7 +50,7 @@ If you type an asterisk at the end of the quick reply, the chat will go to that 
 ```
 
 # Images
-***
+
 We kept the original Markdown syntax for images.
 
 ```
@@ -58,7 +58,6 @@ We kept the original Markdown syntax for images.
 ```
 
 # Links
-***
 
 ```
 - Let me recommend a song for you: [Song Title] (https://www.youtube.com/watch?v=OdhTfdG3FHI)
