@@ -1,29 +1,30 @@
  <template>
   <div class="main-container">
     <section class="hero">
-      <v-container>
+      <v-container fluid>
         <v-layout column justify-center align-center>
           <v-flex xs12>
             <div class="display-3 appTitle">Chatbot Markdown</div>
-            <div class="title">Protype chatbot flows faster with Chatbot Markdown.</div>
+            <div class="title">For companies and developers to prototype chatbot faster.</div>
           </v-flex>
         </v-layout>
-        <!-- <v-layout row class="textArea">
+        <v-layout row class="textArea">
           <v-flex xs12 sm6>
             <v-text-field
               class="textField"
               name="input-1"
+              rows="10"
               autofocus
               textarea
               v-model="txt"
             ></v-text-field>
           </v-flex>
-            <v-flex xs12 sm6>
-              <div class="bot-container">
-                <div v-html="textHtml"></div>
-              </div>
-            </v-flex>
-        </v-layout> -->
+          <v-flex xs12 sm6>
+            <div class="bot-container">
+              <div class="bot-msg-container" v-html="textHtml"></div>
+            </div>
+          </v-flex>
+        </v-layout>
       </v-container>
     </section>
   </div>    
@@ -70,7 +71,7 @@ export default {
       convos: {},
       txt: `# 1
 - Good morning
-- How are you today?
+- Ummm.... hello? 
 [Fine]: 2
 [Bad :(]: 3*
 
@@ -203,7 +204,6 @@ export default {
                 goToThread = reply.payload
               }
             }
-            chatHtml += `</div>`
           } else {
             if (flow.from === 'bot') {
               chatHtml += `<div class="msg"><div class="msg-content bot">${formatMarkdown(flow.say)}</div></div>`
@@ -228,7 +228,7 @@ export default {
 
 .hero {
   min-height: calc(100vh - 38px);
-  background-color: #333;
+  /* background-color: #333; */
   width: 100%;
   /* Position and center the image to scale nicely on all screens */
   /* background-position: bottom;
@@ -247,6 +247,7 @@ export default {
   width: 500px;
   overflow-y: auto;
   margin: 0 auto;
+  padding: 1em 0;
 }
 
 .msg {
