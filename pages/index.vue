@@ -182,10 +182,10 @@ export default {
 
         // for each conversation in thread...
         for (let j = 0; j < flows.length; j++) {
-          const flow = flows[j]
+          let flow = flows[j]
 
           if (goToThread !== '') {
-            if (threads[i] !== goToThread) {
+            if (threads[i].toString() !== goToThread) {
               continue
             } else {
               goToThread = ''
@@ -204,6 +204,7 @@ export default {
                 goToThread = reply.payload
               }
             }
+            chatHtml += `</div>`
           } else {
             if (flow.from === 'bot') {
               chatHtml += `<div class="msg"><div class="msg-content bot">${formatMarkdown(flow.say)}</div></div>`
