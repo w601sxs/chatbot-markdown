@@ -1,22 +1,64 @@
-# chatbot-markdown
+# Chatbot Markdown
 
-> A markdown for chatbot prototyping
+For businesses and developers to prototype chatbot faster without moving the mouse.
 
-## Build Setup
+# Bot and Human conversation
 
-``` bash
-# install dependencies
-$ npm install # Or yarn install
-
-# serve with hot reload at localhost:3000
-$ npm run dev
-
-# build for production and launch server
-$ npm run build
-$ npm start
-
-# generate static project
-$ npm run generate
+```
+- Hi human! I come in peace.
+-- Reveal yourself!
 ```
 
-For detailed explanation on how things work, check out the [Nuxt.js](https://github.com/nuxt/nuxt.js) and [Vuetify.js](https://vuetifyjs.com/) documentation.
+# Flow 
+
+You're familiar with tree diagram. Each branch in the tree is a **flow**.
+
+```
+# 1
+- Going to second flow
+
+# 2
+- Here in second flow
+```
+
+# Quick replies
+
+This UI element is similar to Facebook messenger.
+
+The syntax is `[button_text]: go_to_flow`.
+
+```
+# 1
+- Are you ready?
+[Yes]: 2
+[No]: 3
+```
+
+If you type an asterisk at the end of the quick reply, the chat will go to that particular flow
+
+```
+# 1
+- Which flow would you like to go?
+[Second flow]: 2
+[Third flow]: 3*
+
+# 2
+- Hi from second flow
+
+# 3
+- Hi from third flow
+```
+
+# Images
+
+We kept the original Markdown syntax for images.
+
+```
+- ![hedgehog](https://media.boingboing.net/wp-content/uploads/2017/08/hedgie.gif)`
+```
+
+# Links
+
+```
+- Let me recommend a song for you: [Song Title] (https://www.youtube.com/watch?v=OdhTfdG3FHI)
+```
