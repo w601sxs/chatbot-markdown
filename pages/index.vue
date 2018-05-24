@@ -88,6 +88,7 @@ export default {
     textHtml () {
       let convos = {}
       let lines = this.txt.split(/\n|\r/g)
+      lines = lines || []
 
       let currentThread = ''
 
@@ -102,6 +103,7 @@ export default {
         }
 
         let thread = convos[currentThread]
+        thread = thread || []
         let lastConvo = thread[thread.length - 1]
 
         // [ for quick replies
@@ -176,6 +178,8 @@ export default {
       // sort threads ascending
       const threads = Object.keys(convos).map(Number).sort()
       let goToThread = ''
+      // for skipping thread if one quick reply is selected
+      let threadsToSkip = []
       // for each thread...
       for (let i = 0; i < threads.length; i++) {
         const flows = convos[threads[i]]
@@ -192,24 +196,28 @@ export default {
             }
           }
 
-          if (flow.type === 'quick replies') {
-            chatHtml += `<div class="msg-quick-replies">`
-            // loop for each quick reply
-            for (let r = 0; r < flow.replies.length; r++) {
-              const reply = flow.replies[r]
-              chatHtml += `<button type="button" class="quick-replies-btn${reply.selected ? ' selected' : ''}">${reply.say}</button>`
+          if (!threadsToSkip.includes(threads[i].toString())) {
+            if (flow.type === 'quick replies') {
+              chatHtml += `<div class="msg-quick-replies">`
+              // loop for each quick reply
+              for (let r = 0; r < flow.replies.length; r++) {
+                const reply = flow.replies[r]
+                chatHtml += `<button type="button" class="quick-replies-btn${reply.selected ? ' selected' : ''}">${reply.say}</button>`
 
-              // go to thread
-              if (reply.selected) {
-                goToThread = reply.payload
+                // go to thread
+                if (reply.selected) {
+                  goToThread = reply.payload
+                } else {
+                  threadsToSkip.push(reply.payload)
+                }
               }
-            }
-            chatHtml += `</div>`
-          } else {
-            if (flow.from === 'bot') {
-              chatHtml += `<div class="msg"><div class="msg-content bot">${formatMarkdown(flow.say)}</div></div>`
+              chatHtml += `</div>`
             } else {
-              chatHtml += `<div class="msg"><div class="msg-content human">${formatMarkdown(flow.say)}</div></div>`
+              if (flow.from === 'bot') {
+                chatHtml += `<div class="msg"><div class="msg-content bot">${formatMarkdown(flow.say)}</div></div>`
+              } else {
+                chatHtml += `<div class="msg"><div class="msg-content human">${formatMarkdown(flow.say)}</div></div>`
+              }
             }
           }
         }
