@@ -88,85 +88,90 @@ export default {
     textHtml () {
       let convos = {}
       let lines = this.txt.split(/\n|\r/g)
-      lines = lines || []
 
       let currentThread = ''
 
       for (let i = 0; i < lines.length; i++) {
         let line = lines[i].trim()
+
         const firstChar = line[0]
 
         // # for new thread
         if (firstChar === '#') {
-          currentThread = line.match(/\d+/g)[0]
-          convos[currentThread] = []
+          currentThread = line.match(/\d+/g)
+          if (currentThread) {
+            currentThread = currentThread[0]
+            convos[currentThread] = []
+          }
         }
 
         let thread = convos[currentThread]
         thread = thread || []
         let lastConvo = thread[thread.length - 1]
 
-        // [ for quick replies
-        if (firstChar === '[') {
-          // payload number is after ':'
-          // split into [text, payload]
-          const idx = line.lastIndexOf(':')
+        if (convos[currentThread]) {
+          // [ for quick replies
+          if (firstChar === '[') {
+            // payload number is after ':'
+            // split into [text, payload]
+            const idx = line.lastIndexOf(':')
 
-          // slice to remove first and last square brackets
-          const split = [
-            line.slice(0, idx).slice(1, -1),
-            line.slice(idx + 1).trim()
-          ]
-          // * for selected quick reply
-          const selected = split[1].slice(-1) === '*'
-          split[1] = split[1].replace(/\D/g, '')
-          // if lastConvo is a 'quick reply', add to it
-          if (lastConvo.type === 'quick replies') {
-            lastConvo.replies.push(
-              {
-                say: split[0],
-                payload: split[1],
-                selected: selected
-              }
-            )
-          } else {
-            thread.push(
-              {
-                'type': 'quick replies',
-                'replies': [
-                  {
-                    say: split[0],
-                    payload: split[1],
-                    selected: selected
-                  }
-                ]
-              }
-            )
+            // slice to remove first and last square brackets
+            const split = [
+              line.slice(0, idx).slice(1, -1),
+              line.slice(idx + 1).trim()
+            ]
+            // * for selected quick reply
+            const selected = split[1].slice(-1) === '*'
+            split[1] = split[1].replace(/\D/g, '')
+            // if lastConvo is a 'quick reply', add to it
+            if (lastConvo.type === 'quick replies') {
+              lastConvo.replies.push(
+                {
+                  say: split[0],
+                  payload: split[1],
+                  selected: selected
+                }
+              )
+            } else {
+              thread.push(
+                {
+                  'type': 'quick replies',
+                  'replies': [
+                    {
+                      say: split[0],
+                      payload: split[1],
+                      selected: selected
+                    }
+                  ]
+                }
+              )
+            }
           }
-        }
 
-        // - for bot
-        // -- for user reply (only for simulation)
-        if (firstChar === '-') {
-          // bot
-          if (line[1] === ' ') {
-            convos[currentThread].push(
-              {
-                'say': line.substring(2),
-                'type': 'text',
-                'from': 'bot'
-              }
-            )
-          }
-          // human
-          if (line[1] === '-' & line[2] === ' ') {
-            convos[currentThread].push(
-              {
-                'say': line.substring(3),
-                'type': 'text',
-                'from': 'user'
-              }
-            )
+          // - for bot
+          // -- for user reply (only for simulation)
+          if (firstChar === '-') {
+            // bot
+            if (line[1] === ' ') {
+              convos[currentThread].push(
+                {
+                  'say': line.substring(2),
+                  'type': 'text',
+                  'from': 'bot'
+                }
+              )
+            }
+            // human
+            if (line[1] === '-' & line[2] === ' ') {
+              convos[currentThread].push(
+                {
+                  'say': line.substring(3),
+                  'type': 'text',
+                  'from': 'user'
+                }
+              )
+            }
           }
         }
       }
