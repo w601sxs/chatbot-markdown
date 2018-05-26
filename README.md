@@ -69,11 +69,14 @@ We'll use [nomnoml](http://nomnoml.com) to auto generate a tree diagram for the 
 
 A script will run to convert the markdown into 'nomnoml' format, e.g:
 
+```
+#.selected: fill=#88ff88 visual=input
+
 [1|
 Good Morning|
 Umm Hello?]
-[1]->[Fine]
-[1]->[Bad :(]
+[1]->[<input>Fine]
+[1]->[<selected> Bad :(]
 [Fine]->[2]
 [Bad :(]->[3]
 
@@ -86,3 +89,4 @@ Great! Here's a song for you: https://www.youtube.com/watch?v=OdhTfdG3FHI|
 Cheers!|
 https://media.boingboing.net/wp-content/uploads/2017/08/hedgie.gif
 ]
+```
