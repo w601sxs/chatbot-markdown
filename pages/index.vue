@@ -25,6 +25,7 @@
             </div>
           </v-flex>
         </v-layout>
+        <!-- {{ convos }} -->
       </v-container>
     </section>
   </div>    
@@ -124,29 +125,18 @@ export default {
             // * for selected quick reply
             const selected = split[1].slice(-1) === '*'
             split[1] = split[1].replace(/\D/g, '')
-            // if lastConvo is a 'quick reply', add to it
-            if (lastConvo.type === 'quick replies') {
-              lastConvo.replies.push(
-                {
-                  say: split[0],
-                  payload: split[1],
-                  selected: selected
-                }
-              )
-            } else {
-              thread.push(
-                {
-                  'type': 'quick replies',
-                  'replies': [
-                    {
-                      say: split[0],
-                      payload: split[1],
-                      selected: selected
-                    }
-                  ]
-                }
-              )
+            // add quick replies to previous conversation
+            if (lastConvo.type === 'text') {
+              lastConvo.type = 'quick replies'
+              lastConvo.replies = []
             }
+            lastConvo.replies.push(
+              {
+                say: split[0],
+                payload: split[1],
+                selected: selected
+              }
+            )
           }
 
           // - for bot
@@ -203,6 +193,7 @@ export default {
 
           if (!threadsToSkip.includes(threads[i].toString())) {
             if (flow.type === 'quick replies') {
+              chatHtml += `<div class="msg"><div class="msg-content bot">${formatMarkdown(flow.say)}</div></div>`
               chatHtml += `<div class="msg-quick-replies">`
               // loop for each quick reply
               for (let r = 0; r < flow.replies.length; r++) {
