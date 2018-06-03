@@ -11,6 +11,8 @@
     "generate": "nuxt generate"
   },
   "dependencies": {
+    "fs": "0.0.1-security",
+    "nomnoml": "^0.2.0",
     "nuxt": "^1.0.0",
     "sass-loader": "^7.0.1",
     "vuetify": "^1.0.0"

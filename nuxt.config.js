@@ -19,7 +19,9 @@ module.exports = {
       }
     ]
   },
-  plugins: ['~/plugins/vuetify.js'],
+  plugins: [
+    { src: '~/plugins/vuetify.js' }
+  ],
   css: [
     '~/assets/style/app.styl'
   ],
@@ -37,6 +39,9 @@ module.exports = {
     */
     extend (config, ctx) {
       if (ctx.isDev && ctx.isClient) {
+        config.node = {
+          fs: 'empty'
+        }
         config.module.rules.push({
           enforce: 'pre',
           test: /\.(js|vue)$/,

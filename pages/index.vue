@@ -20,9 +20,36 @@
             ></v-text-field>
           </v-flex>
           <v-flex xs12 sm6>
-            <div class="bot-container">
-              <div class="bot-msg-container" v-html="textHtml"></div>
-            </div>
+            <v-tabs
+            v-model="activeTab"
+            slider-color="yellow darken-2"
+            >
+              <v-tab ripple href="#tab-chat">
+                Chat Demo
+              </v-tab>
+
+              <v-tab ripple href="#tab-map">
+                Flow Map
+              </v-tab>
+              
+              <v-tab ripple href="#tab-json">
+                JSON
+              </v-tab>
+
+              <v-tab-item id="tab-map">
+                <h3>Flow Map</h3>
+              </v-tab-item>
+
+              <v-tab-item id="tab-chat">
+                <div class="bot-container">
+                  <div class="bot-msg-container" v-html="textHtml"></div>
+                </div>
+              </v-tab-item>
+
+              <v-tab-item id="tab-json">
+                <pre>{{ mdJson }}</pre>
+              </v-tab-item>
+            </v-tabs>
           </v-flex>
         </v-layout>
         <!-- {{ convos }} -->
@@ -31,44 +58,158 @@
   </div>    
 </template>
 
+
 <script>
+function markdownToJson (markdown) {
+  console.log('RUNNING MARKDOWN TO JSON')
+  let convos = {}
+  let lines = markdown.split(/\n|\r/g)
+  let currentThread = ''
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i]
+    const firstChar = line[0]
+    const secondChar = line[1]
+    // # for new thread
+    if (firstChar === '#') {
+      currentThread = line.match(/\S+/g)
+      if (currentThread[1]) {
+        currentThread = currentThread[1]
+        convos[currentThread] = []
+      }
+    }
+    let thread = convos[currentThread]
+    thread = thread || []
+    let lastConvo = thread[thread.length - 1]
+    // console.log('thread: ', thread)
+    // console.log('lastConvo: ', lastConvo)
+
+    if (convos[currentThread]) {
+      // [ for quick replies
+      if (firstChar === '[') {
+        // payload number is after ':'
+        // split into [text, payload]
+        const idx = line.lastIndexOf(':')
+
+        // if no ':', there's no payload
+        let split
+        if (idx >= 0) {
+          // slice to remove first and last square brackets
+          split = [
+            line.slice(0, idx).slice(1, -1),
+            line.slice(idx + 1).trim()
+          ]
+        } else {
+          split = [
+            line.slice(1, -1),
+            ''
+          ]
+        }
+
+        // * for selected quick reply
+        const selected = split[1].slice(-1) === '*'
+        // add quick replies to previous conversation
+        if (lastConvo) {
+          if (lastConvo.type && lastConvo.type === 'text') {
+            if (secondChar === ']') {
+              lastConvo.type = 'ask quick replies'
+            } else {
+              lastConvo.type = 'quick replies'
+            }
+            lastConvo.replies = []
+          }
+          if (lastConvo.replies) {
+            lastConvo.replies.push({
+              title: split[0],
+              payload: split[1],
+              selected: selected
+            })
+          }
+        }
+      }
+
+      // - for bot
+      // -- for user reply (only for simulation)
+      if (firstChar === '-') {
+        // bot
+        if (line[1] === ' ') {
+          convos[currentThread].push({
+            'say': line.substring(2),
+            'type': 'text',
+            'from': 'bot'
+          })
+        }
+        // human
+        if (line[1] === '-' & line[2] === ' ') {
+          convos[currentThread].push({
+            'say': line.substring(3),
+            'type': 'text',
+            'from': 'user'
+          })
+        }
+      }
+
+      // space followed by a dash is a multiple selection list
+      if (line && /^\s+-/.test(line)) {
+        let ls = line.match(/^\s*-(.*)/)[1].trim()
+        if (lastConvo) {
+          if (lastConvo.type && lastConvo.type === 'text') {
+            lastConvo.type = 'list multiple'
+            lastConvo.list_multiple = []
+          }
+          if (lastConvo.list_multiple) {
+            lastConvo.list_multiple.push({
+              title: ls
+            })
+          }
+        }
+      }
+    }
+  }
+  // fs.writeFile('convos.json', JSON.stringify(convos), function (err) {
+  //   if (err) throw err;
+  // })
+  return convos
+}
+
 function formatMarkdown (str) {
   // link []()
   // find between [ and ) to replace with href HTML
-  let foundLink = str.match(/\[(.*?)\)/i)
-  foundLink = foundLink ? foundLink[0] : ''
+  if (str) {
+    let foundLink = str.match(/\[(.*?)\)/i)
+    foundLink = foundLink ? foundLink[0] : ''
 
-  // images ![]()
-  let foundImage = str.match(/!\[(.*?)\)/i)
-  foundImage = foundImage ? foundImage[0] : ''
+    // images ![]()
+    let foundImage = str.match(/!\[(.*?)\)/i)
+    foundImage = foundImage ? foundImage[0] : ''
 
-  if (foundLink !== '' & foundImage === '') {
-    let txt = str.match(/\[(.*?)\]/i)
-    txt = txt ? txt[1] : ''
+    if (foundLink !== '' & foundImage === '') {
+      let txt = str.match(/\[(.*?)\]/i)
+      txt = txt ? txt[1] : ''
 
-    let link = str.match(/\((.*?)\)/i)
-    link = link ? link[1] : ''
+      let link = str.match(/\((.*?)\)/i)
+      link = link ? link[1] : ''
 
-    let formattedLink = `<a href="${link}">${txt}</a>`
-    str = str.replace(foundLink, formattedLink)
+      let formattedLink = `<a href="${link}">${txt}</a>`
+      str = str.replace(foundLink, formattedLink)
+    }
+
+    if (foundImage !== '') {
+      let txt = str.match(/\[(.*?)\]/i)
+      txt = txt ? txt[1] : ''
+
+      let link = str.match(/\((.*?)\)/i)
+      link = link ? link[1] : ''
+
+      let formattedLink = `<img src="${link}" alt="${txt}">`
+      str = str.replace(foundImage, formattedLink)
+    }
+    return str
   }
-
-  if (foundImage !== '') {
-    let txt = str.match(/\[(.*?)\]/i)
-    txt = txt ? txt[1] : ''
-
-    let link = str.match(/\((.*?)\)/i)
-    link = link ? link[1] : ''
-
-    let formattedLink = `<img src="${link}" alt="${txt}">`
-    str = str.replace(foundImage, formattedLink)
-  }
-  return str
 }
-
 export default {
   data () {
     return {
+      activeTab: 'tab-chat',
       convos: {},
       txt: `# 1
 - Good morning
@@ -86,6 +227,9 @@ export default {
     }
   },
   computed: {
+    mdJson () {
+      return JSON.stringify(markdownToJson(this.txt), null, 2)
+    },
     textHtml () {
       let convos = {}
       let lines = this.txt.split(/\n|\r/g)
