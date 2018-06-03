@@ -8,21 +8,12 @@
             <div class="title">For companies and developers to prototype chatbot faster.</div>
           </v-flex>
         </v-layout>
-        <v-layout row class="textArea">
-          <v-flex xs12 sm6>
-            <v-text-field
-              class="textField"
-              name="input-1"
-              rows="10"
-              autofocus
-              textarea
-              v-model="txt"
-            ></v-text-field>
-          </v-flex>
-          <v-flex xs12 sm6>
+        <v-layout row class="textArea mt-3">
+          <v-flex xs12>
             <v-tabs
             v-model="activeTab"
             slider-color="yellow darken-2"
+            centered
             >
               <v-tab ripple href="#tab-chat">
                 Chat Demo
@@ -37,13 +28,27 @@
               </v-tab>
 
               <v-tab-item id="tab-map">
-                <h3>Flow Map</h3>
+                <div v-html="nomnomlMd"></div>
               </v-tab-item>
 
               <v-tab-item id="tab-chat">
-                <div class="bot-container">
-                  <div class="bot-msg-container" v-html="textHtml"></div>
-                </div>
+                <v-layout row>
+                  <v-flex xs12 sm6>
+                    <v-text-field
+                      class="textField"
+                      name="input-1"
+                      rows="10"
+                      autofocus
+                      textarea
+                      v-model="txt"
+                    ></v-text-field>
+                  </v-flex>
+                  <v-flex xs12 sm6>
+                    <div class="bot-container">
+                      <div class="bot-msg-container" v-html="textHtml"></div>
+                    </div>
+                  </v-flex>
+                </v-layout>
               </v-tab-item>
 
               <v-tab-item id="tab-json">
@@ -60,6 +65,8 @@
 
 
 <script>
+import nomnoml from 'nomnoml'
+
 function markdownToJson (markdown) {
   console.log('RUNNING MARKDOWN TO JSON')
   let convos = {}
@@ -206,6 +213,45 @@ function formatMarkdown (str) {
     return str
   }
 }
+
+function jsonToNom (js) {
+  let keys = Object.keys(js)
+  let md = ``
+
+  // for each thread in flow
+  for (let i = 0; i < keys.length; i++) {
+    let key = keys[i]
+    let thread = js[key][0]
+    md += `[${key} | ${thread.say}]\n`
+
+    // create quick replies with payload
+    if (thread.type.includes('quick replies')) {
+      for (let r = 0; r < thread.replies.length; r++) {
+        let reply = thread.replies[r]
+        let title = `${key}: ${reply.title}`
+        let diagType = 'state'
+
+        // open ended question
+        if (reply.title === '') {
+          diagType = 'input'
+          title = `${key}: User answer`
+        }
+
+        // msg -> quick replies
+        md += `[${key}] -> [<${diagType}> ${title}]\n`
+
+        // quick replies payload -> thread
+        // skip if payload is empty. Causes error in nomnoml
+        if (reply.payload && reply.payload !== '' && reply.payload !== '[]') {
+          md += `[${title}] -> [${reply.payload}]\n`
+        }
+      }
+    }
+    md += `\n`
+  }
+  return md
+}
+
 export default {
   data () {
     return {
@@ -218,12 +264,7 @@ export default {
 [Bad :(]: 3*
 
 # 2
--- I'm fine, thanks!
-
-# 3
-- Great! Here's a song for you: [link] (https://www.youtube.com/watch?v=OdhTfdG3FHI)
-- Cheers!
-- ![hedgehog](https://media.boingboing.net/wp-content/uploads/2017/08/hedgie.gif)`
+-- I'm fine, thanks!`
     }
   },
   computed: {
@@ -365,6 +406,9 @@ export default {
       chatHtml += ``
       this.convos = convos
       return chatHtml
+    },
+    nomnomlMd () {
+      return nomnoml.renderSvg(jsonToNom(markdownToJson(this.txt)))
     }
   }
 }
