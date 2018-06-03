@@ -222,10 +222,14 @@ function jsonToNom (js) {
   for (let i = 0; i < keys.length; i++) {
     let key = keys[i]
     let thread = js[key][0]
-    md += `[${key} | ${thread.say}]\n`
+    if (thread) {
+      if (!thread.say || thread.say.length !== 0) {
+        md += `[${key} | ${thread.say}]\n`
+      }
+    }
 
     // create quick replies with payload
-    if (thread.type.includes('quick replies')) {
+    if (thread && thread.type.includes('quick replies')) {
       for (let r = 0; r < thread.replies.length; r++) {
         let reply = thread.replies[r]
         let title = `${key}: ${reply.title}`
@@ -356,7 +360,7 @@ export default {
       let chatHtml = ``
 
       // sort threads ascending
-      const threads = Object.keys(convos).map(Number).sort()
+      const threads = Object.keys(convos).sort()
       let goToThread = ''
       // for skipping thread if one quick reply is selected
       let threadsToSkip = []
@@ -408,7 +412,26 @@ export default {
       return chatHtml
     },
     nomnomlMd () {
-      return nomnoml.renderSvg(jsonToNom(markdownToJson(this.txt)))
+      let nom = jsonToNom(markdownToJson(this.txt))
+      if (nom && nom.trim() !== '' && nom !== '[]') {
+        // console.log(nomnoml)
+        return nomnoml.renderSvg(nom)
+      } else {
+        return ''
+      }
+    }
+  },
+  mounted () {
+    let lastMarkdown = window.localStorage.getItem('chatMD.last')
+    if (lastMarkdown & lastMarkdown !== '' & this.txt !== '') {
+      this.txt = lastMarkdown
+    }
+  },
+  watch: {
+    txt: {
+      handler: function () {
+        window.localStorage.setItem(`chatMD.last`, this.txt)
+      }
     }
   }
 }
