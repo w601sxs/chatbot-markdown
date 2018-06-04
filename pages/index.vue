@@ -221,37 +221,44 @@ function jsonToNom (js) {
   // for each thread in flow
   for (let i = 0; i < keys.length; i++) {
     let key = keys[i]
-    let thread = js[key][0]
+    let thread = js[key]
+
     if (thread) {
-      if (!thread.say || thread.say.length !== 0) {
-        md += `[${key} | ${thread.say}]\n`
-      }
-    }
-
-    // create quick replies with payload
-    if (thread && thread.type.includes('quick replies')) {
-      for (let r = 0; r < thread.replies.length; r++) {
-        let reply = thread.replies[r]
-        let title = `${key}: ${reply.title}`
-        let diagType = 'state'
-
-        // open ended question
-        if (reply.title === '') {
-          diagType = 'input'
-          title = `${key}: User answer`
+      md += `[${key}\n`
+      // for each convo in thread
+      for (let j = 0; j < thread.length; j++) {
+        let flow = thread[j]
+        md += `| ${flow.say}\n`
+        if (j === thread.length - 1) {
+          md += `]\n`
         }
 
-        // msg -> quick replies
-        md += `[${key}] -> [<${diagType}> ${title}]\n`
+        // create quick replies with payload
+        if (flow && flow.type.includes('quick replies')) {
+          for (let r = 0; r < flow.replies.length; r++) {
+            let reply = flow.replies[r]
+            let title = `${key}: ${reply.title}`
+            let diagType = 'state'
 
-        // quick replies payload -> thread
-        // skip if payload is empty. Causes error in nomnoml
-        if (reply.payload && reply.payload !== '' && reply.payload !== '[]') {
-          md += `[${title}] -> [${reply.payload}]\n`
+            // open ended question
+            if (reply.title === '') {
+              diagType = 'input'
+              title = `${key}: User answer`
+            }
+
+            // msg -> quick replies
+            md += `[${key}] -> [<${diagType}> ${title}]\n`
+
+            // quick replies payload -> thread
+            // skip if payload is empty. Causes error in nomnoml
+            if (reply.payload && reply.payload !== '' && reply.payload !== '[]') {
+              md += `[${title}] -> [${reply.payload}]\n`
+            }
+          }
         }
       }
+      md += `\n`
     }
-    md += `\n`
   }
   return md
 }
