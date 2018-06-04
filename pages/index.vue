@@ -436,7 +436,7 @@ export default {
   },
   mounted () {
     let lastMarkdown = window.localStorage.getItem('chatMD.last')
-    if (lastMarkdown & lastMarkdown !== '' & this.txt !== '') {
+    if (lastMarkdown && lastMarkdown !== '' && this.txt !== '') {
       this.txt = lastMarkdown
     }
   },
