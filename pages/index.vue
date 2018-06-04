@@ -451,6 +451,13 @@ export default {
 </script>
 
 <style>
+
+.tabs__items {
+  overflow-x: scroll;
+  position: relative;
+  height: calc(100vh - 250px);
+}
+
 .appTitle {
   font-weight: 700;
 }
