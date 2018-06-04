@@ -246,11 +246,11 @@ function jsonToNom (js) {
           for (let r = 0; r < flow.replies.length; r++) {
             let reply = flow.replies[r]
             let title = `${key}: ${reply.title}`
-            let diagType = 'quickReply'
+            let diagType = 'state'
 
             // open ended question
             if (reply.title === '') {
-              diagType = 'openEnded'
+              diagType = 'input'
               title = `${key}: User answer`
             }
 
