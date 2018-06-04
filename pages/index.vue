@@ -288,9 +288,9 @@ export default {
 
         // # for new thread
         if (firstChar === '#') {
-          currentThread = line.match(/\d+/g)
-          if (currentThread) {
-            currentThread = currentThread[0]
+          currentThread = line.match(/\S+/g)
+          if (currentThread[1]) {
+            currentThread = currentThread[1]
             convos[currentThread] = []
           }
         }
@@ -360,7 +360,13 @@ export default {
       let chatHtml = ``
 
       // sort threads ascending
-      const threads = Object.keys(convos).sort()
+      let threads = Object.keys(convos).sort()
+      // move 'default' thread to the front
+      if (threads.includes('default')) {
+        threads = threads.filter(item => item !== 'default')
+        threads.unshift('default')
+      }
+
       let goToThread = ''
       // for skipping thread if one quick reply is selected
       let threadsToSkip = []
