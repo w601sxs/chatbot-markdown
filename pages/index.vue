@@ -473,7 +473,7 @@ export default {
 
 .bot-container {
   height: auto;
-  width: 500px;
+  width: 80%;
   overflow-y: auto;
   margin: 0 auto;
   padding: 1em 0;
@@ -520,7 +520,7 @@ export default {
   background-color: #fcedb5;
   color: #333;
   padding: 7px 15px;
-  margin: 0 5px 0 5px;
+  margin: 5px;
   box-shadow: 2px 3px 4px 0 rgba(0, 0, 0, 0.25);
   border: 0;
 }
