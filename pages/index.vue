@@ -216,7 +216,12 @@ function formatMarkdown (str) {
 
 function jsonToNom (js) {
   let keys = Object.keys(js)
-  let md = ``
+  let md = `
+  #fill: #fff; #fdf6e3
+  #.quickReply: fill=#fcedb5 visual=roundrect
+  #.openEnded: fill=#fcedb5 visual=input
+  
+  `
 
   // for each thread in flow
   for (let i = 0; i < keys.length; i++) {
