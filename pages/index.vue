@@ -461,7 +461,7 @@ export default {
 <style>
 
 .tabs__items {
-  overflow-x: scroll;
+  overflow: scroll;
   position: relative;
   height: calc(100vh - 250px);
 }
