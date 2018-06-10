@@ -44,6 +44,7 @@
                     ></v-text-field>
                   </v-flex>
                   <v-flex xs12 sm6>
+                    {{ mdJson }}
                     <div class="bot-container">
                       <div class="bot-msg-container" v-html="textHtml"></div>
                     </div>
@@ -67,13 +68,16 @@
 <script>
 import nomnoml from 'nomnoml'
 
+// creates an array of flow which contains: thread > convo
+// [{ thread: 1, convo: [{ say: '', type: '', 'from: ''}, ...]}, { thread: 2, ...}]
 function markdownToJson (markdown) {
-  console.log('RUNNING MARKDOWN TO JSON')
-  let convos = {}
+  // console.log('RUNNING MARKDOWN TO JSON')
+  let finalJson = []
   let lines = markdown.split(/\n|\r/g)
-  let currentThread = ''
+  let currentThread
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i]
+    // console.log('>>> line: ', line)
     const firstChar = line[0]
     const secondChar = line[1]
     // # for new thread
@@ -81,24 +85,55 @@ function markdownToJson (markdown) {
       currentThread = line.match(/\S+/g)
       if (currentThread[1]) {
         currentThread = currentThread[1]
-        convos[currentThread] = []
+        finalJson.push({ thread: currentThread, convos: [] })
       }
     }
-    let thread = convos[currentThread]
-    thread = thread || []
-    let lastConvo = thread[thread.length - 1]
+
+    // find index of json in array
+    let threadIdx = finalJson.findIndex((item, i) => {
+      return item.thread === currentThread
+    })
+
+    // console.log('>>> currentThread: ', currentThread)
+    // console.log('>> convos: ', convos)
+    // console.log('>> threadIdx: ', threadIdx)
+
+    // let thread = convos[currentThread]
+    // thread = thread || []
     // console.log('thread: ', thread)
     // console.log('lastConvo: ', lastConvo)
 
-    if (convos[currentThread]) {
-      // [ for quick replies
-      if (firstChar === '[') {
+    if (threadIdx >= 0) {
+      let threadConvos = finalJson[threadIdx].convos
+      let lastConvoInThread = threadConvos[threadConvos.length - 1] // to push quick replies
+      // let lastConvo = thread[thread.length - 1]
+      // - for bot
+      // -- for user reply (only for simulation)
+      let say
+      let type = 'text'
+      let from = 'bot'
+
+      if (firstChar === '-') {
+        // bot
+        if (line[1] === ' ') {
+          say = line.substring(2)
+        // human
+        } else if (line[1] === '-' & line[2] === ' ') {
+          say = line.substring(3)
+          from = 'user'
+        }
+        threadConvos.push({
+          'say': say,
+          'type': type,
+          'from': from
+        })
+      // [ : quick replies
+      } else if (firstChar === '[') {
         // payload number is after ':'
         // split into [text, payload]
         const idx = line.lastIndexOf(':')
-
-        // if no ':', there's no payload
         let split
+        // if there's no ':', there's no payload
         if (idx >= 0) {
           // slice to remove first and last square brackets
           split = [
@@ -112,70 +147,29 @@ function markdownToJson (markdown) {
           ]
         }
 
-        // * for selected quick reply
         const selected = split[1].slice(-1) === '*'
-        // add quick replies to previous conversation
-        if (lastConvo) {
-          if (lastConvo.type && lastConvo.type === 'text') {
-            if (secondChar === ']') {
-              lastConvo.type = 'ask quick replies'
-            } else {
-              lastConvo.type = 'quick replies'
-            }
-            lastConvo.replies = []
-          }
-          if (lastConvo.replies) {
-            lastConvo.replies.push({
-              title: split[0],
-              payload: split[1],
-              selected: selected
-            })
-          }
-        }
-      }
 
-      // - for bot
-      // -- for user reply (only for simulation)
-      if (firstChar === '-') {
-        // bot
-        if (line[1] === ' ') {
-          convos[currentThread].push({
-            'say': line.substring(2),
-            'type': 'text',
-            'from': 'bot'
-          })
+        // change previous convo to quick reply
+        if (lastConvoInThread.type && lastConvoInThread.type === 'text') {
+          // [] : open ended question with quick replies
+          if (secondChar === ']') {
+            lastConvoInThread.type = 'ask quick replies'
+          } else {
+            lastConvoInThread.type = 'quick replies'
+          }
+          lastConvoInThread.replies = []
         }
-        // human
-        if (line[1] === '-' & line[2] === ' ') {
-          convos[currentThread].push({
-            'say': line.substring(3),
-            'type': 'text',
-            'from': 'user'
-          })
-        }
-      }
 
-      // space followed by a dash is a multiple selection list
-      if (line && /^\s+-/.test(line)) {
-        let ls = line.match(/^\s*-(.*)/)[1].trim()
-        if (lastConvo) {
-          if (lastConvo.type && lastConvo.type === 'text') {
-            lastConvo.type = 'list multiple'
-            lastConvo.list_multiple = []
-          }
-          if (lastConvo.list_multiple) {
-            lastConvo.list_multiple.push({
-              title: ls
-            })
-          }
-        }
+        lastConvoInThread.replies.push({
+          title: split[0],
+          payload: split[1],
+          selected: selected
+        })
       }
     }
   }
-  // fs.writeFile('convos.json', JSON.stringify(convos), function (err) {
-  //   if (err) throw err;
-  // })
-  return convos
+  console.log('>>> finalJson: ', finalJson)
+  return finalJson
 }
 
 function formatMarkdown (str) {
@@ -215,7 +209,6 @@ function formatMarkdown (str) {
 }
 
 function jsonToNom (js) {
-  let keys = Object.keys(js)
   let md = `
   #fill: #fff; #fdf6e3
   #lineWidth: 2
@@ -227,47 +220,59 @@ function jsonToNom (js) {
   `
 
   // for each thread in flow
-  for (let i = 0; i < keys.length; i++) {
-    let key = keys[i]
-    let thread = js[key]
+  // console.log('>> js length: ', js.length)
+  for (let i = 0; i < js.length; i++) {
+    let thread = js[i]
+    let key = thread['thread']
 
-    if (thread) {
-      md += `[${key}\n`
-      // for each convo in thread
-      for (let j = 0; j < thread.length; j++) {
-        let flow = thread[j]
-        md += `| ${flow.say}\n`
-        if (j === thread.length - 1) {
-          md += `]\n`
-        }
+    console.log('>> thread: ', thread)
 
-        // create quick replies with payload
-        if (flow && flow.type.includes('quick replies')) {
-          for (let r = 0; r < flow.replies.length; r++) {
-            let reply = flow.replies[r]
-            let title = `${key}: ${reply.title}`
-            let diagType = 'quickreply'
+    md += `\n[${key}\n]`
+    // for each convo in thread
+    for (let j = 0; j < thread.convos.length; j++) {
+      let convo = thread.convos[j]
+      // console.log('>> convo: ', convo)
+      // console.log('j: ', j)
+      // console.log('md: ', md)
+      // console.log('md slice: ', md.slice(0, -1))
 
-            // open ended question
-            if (reply.title === '') {
-              diagType = 'openended'
-              title = `${key}: User answer`
-            }
+      // remove ] at the end of the string
+      md = md.slice(0, -1) + `| ` + `${convo.say}\n]`
+      // if (j === thread.length - 1) {
+      //   md += `]\n`
+      // }
 
-            // msg -> quick replies
-            md += `[${key}] -> [<${diagType}> ${title}]\n`
+    //   // create quick replies with payload
+    //   if (flow && flow.type.includes('quick replies')) {
+    //     for (let r = 0; r < flow.replies.length; r++) {
+    //       let reply = flow.replies[r]
+    //       let title = `${key}: ${reply.title}`
+    //       let diagType = 'quickreply'
 
-            // quick replies payload -> thread
-            // skip if payload is empty. Causes error in nomnoml
-            if (reply.payload && reply.payload !== '' && reply.payload !== '[]') {
-              md += `[${title}] -> [${reply.payload}]\n`
-            }
-          }
-        }
-      }
-      md += `\n`
+    //       // open ended question
+    //       if (reply.title === '') {
+    //         diagType = 'openended'
+    //         title = `${key}: User answer`
+    //       }
+
+    //       // msg -> quick replies
+    //       md += `[${key}] -> [<${diagType}> ${title}]\n`
+
+    //       // quick replies payload -> thread
+    //       // skip if payload is empty. Causes error in nomnoml
+    //       if (reply.payload && reply.payload !== '' && reply.payload !== '[]') {
+    //         md += `[${title}] -> [${reply.payload}]\n`
+    //       }
+    //     }
+    //   }
     }
+    md += `\n`
   }
+  // check if last character is a ]
+  // if (md.slice(-1) !== ']') {
+  //   md += ']'
+  // }
+  console.log('>> md: ', md)
   return md
 }
 
@@ -433,10 +438,20 @@ export default {
       return chatHtml
     },
     nomnomlMd () {
-      let nom = jsonToNom(markdownToJson(this.txt))
-      if (nom && nom.trim() !== '' && nom !== '[]') {
-        // console.log(nomnoml)
-        return nomnoml.renderSvg(nom)
+      let json = markdownToJson(this.txt)
+
+      // console.log('nom: ', nom)
+      // console.log('typeof nom: ', typeof nom)
+      // console.log('nom []: ', nom === [])
+      // console.log('nom is blank: ', nom === '')
+
+      // prevent error if json is blank
+      if (json && json.length !== 0) {
+        let nom = jsonToNom(json)
+        if (nom && nom.trim() !== '' && nom !== '[]') {
+          // console.log(nomnoml)
+          return nomnoml.renderSvg(nom)
+        }
       } else {
         return ''
       }
@@ -445,7 +460,10 @@ export default {
   mounted () {
     let lastMarkdown = window.localStorage.getItem('chatMD.last')
     if (lastMarkdown && lastMarkdown !== '' && this.txt !== '') {
-      this.txt = lastMarkdown
+      // this.txt = lastMarkdown
+      this.txt = `
+# 1
+- hello!`
     }
   },
   watch: {
