@@ -243,43 +243,44 @@ function jsonToNom (js) {
     // for each convo in thread
     for (let j = 0; j < thread.convos.length; j++) {
       let convo = thread.convos[j]
+      console.log('>> convo: ', convo)
       let prevConvo = thread.convos[j - 1]
       // if there's text after quick replies, skip as there's no way to reach it
       if (prevConvo && prevConvo.type.includes('quick replies')) {
-      } else {
-        // create quick replies with payload
-        if (convo && convo.type.includes('quick replies')) {
-          for (let r = 0; r < convo.replies.length; r++) {
-            let reply = convo.replies[r]
-            let title = `${key}: ${reply.title}`
-            let diagType = 'quickreply'
+        break
+      }
+      if (convo.say && convo.from === 'bot') {
+        // remove ] at the end of the string
+        md = md.slice(0, -1) + `| ` + `${convo.say}\n]`
+      }
 
-            // open ended question
-            if (reply.title === '') {
-              diagType = 'openended'
-              title = `${key}: User answer`
-            }
+      // create quick replies with payload
+      if (convo && convo.type.includes('quick replies')) {
+        for (let r = 0; r < convo.replies.length; r++) {
+          let reply = convo.replies[r]
+          let title = `${key}: ${reply.title}`
+          let diagType = 'quickreply'
 
-            // msg -> quick replies
-            md += `\n[${key}] -> [<${diagType}> ${title}]\n`
-
-            // quick replies payload -> thread
-            // skip if payload is empty. Causes error in nomnoml
-            if (reply.payload && reply.payload !== '' && reply.payload !== '[]') {
-              md += `\n[${title}] -> [${reply.payload}]\n`
-            }
+          // open ended question
+          if (reply.title === '') {
+            diagType = 'openended'
+            title = `${key}: User answer`
           }
-        } else {
-          if (convo.say && convo.from === 'bot') {
-            // remove ] at the end of the string
-            md = md.slice(0, -1) + `| ` + `${convo.say}\n]`
+
+          // msg -> quick replies
+          md += `\n[${key}] -> [<${diagType}> ${title}]\n`
+
+          // quick replies payload -> thread
+          // skip if payload is empty. Causes error in nomnoml
+          if (reply.payload && reply.payload !== '' && reply.payload !== '[]') {
+            md += `\n[${title}] -> [${reply.payload}]\n`
           }
         }
       }
     }
     md += `\n`
   }
-  // console.log('>> md: ', md)
+  console.log('>> md: ', md)
   return md
 }
 
