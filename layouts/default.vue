@@ -7,7 +7,11 @@
     <v-footer>
       <v-layout row wrap justify-center>
         <v-flex xs12 py-0 text-xs-center>
-          <span>A One-Day Build by Shawn at <a href="https://cupbots.com">Cupbots</a></span>
+          <div>
+            <a href="https://cupbots.com" class="headerLink">
+            &copy; {{ (new Date()).getFullYear() }} Cupbots
+            </a>
+          </div>
         </v-flex>
       </v-layout>
     </v-footer>
@@ -38,5 +42,11 @@
 
 .main-container {
   height: 100%;
+}
+
+.headerLink {
+ color: #555; 
+ text-decoration: none; 
+ font-style: italic; 
 }
 </style>

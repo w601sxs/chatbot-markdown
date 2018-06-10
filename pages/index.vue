@@ -3,10 +3,21 @@
     <section class="hero">
       <v-container fluid>
         <v-layout column justify-center align-center>
-          <v-flex xs12>
-            <div class="display-3 appTitle">Chatbot Markdown</div>
+          <v-flex xs12 text-xs-center>
+            <div class="display-2 appTitle mb-2">Chatbot Markdown</div>
             <div class="title">For companies and developers to prototype chatbot faster.</div>
           </v-flex>
+          <a href="https://cupbots.com" class="headerLink mt-2">
+          <v-flex xs12 py-0 text-xs-center>
+            Built by Shawn at 
+            <span>
+            Cupbots
+            <v-avatar size="25px">
+              <img src="~/static/site-icon.png" alt="Cupbots">
+            </v-avatar>
+            </span>
+          </v-flex>
+          </a>
         </v-layout>
         <v-layout row class="textArea mt-3">
           <v-flex xs12>
@@ -33,7 +44,7 @@
 
               <v-tab-item id="tab-chat">
                 <v-layout row>
-                  <v-flex xs12 sm6>
+                  <v-flex xs12 sm5>
                     <v-text-field
                       class="textField"
                       name="input-1"
@@ -43,10 +54,10 @@
                       v-model="txt"
                     ></v-text-field>
                   </v-flex>
+                  <v-spacer></v-spacer>
                   <v-flex xs12 sm6>
-                    {{ mdJson }}
                     <div class="bot-container">
-                      <div class="bot-msg-container" v-html="textHtml"></div>
+                      <div class="bot-msg-container" v-html="jsonToHTML"></div>
                     </div>
                   </v-flex>
                 </v-layout>
@@ -71,13 +82,11 @@ import nomnoml from 'nomnoml'
 // creates an array of flow which contains: thread > convo
 // [{ thread: 1, convo: [{ say: '', type: '', 'from: ''}, ...]}, { thread: 2, ...}]
 function markdownToJson (markdown) {
-  // console.log('RUNNING MARKDOWN TO JSON')
   let finalJson = []
   let lines = markdown.split(/\n|\r/g)
   let currentThread
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i]
-    // console.log('>>> line: ', line)
     const firstChar = line[0]
     const secondChar = line[1]
     // # for new thread
@@ -85,7 +94,6 @@ function markdownToJson (markdown) {
       currentThread = line.match(/\S+/g)
       if (currentThread[1]) {
         currentThread = currentThread[1]
-        finalJson.push({ thread: currentThread, convos: [] })
       }
     }
 
@@ -94,14 +102,11 @@ function markdownToJson (markdown) {
       return item.thread === currentThread
     })
 
-    // console.log('>>> currentThread: ', currentThread)
-    // console.log('>> convos: ', convos)
-    // console.log('>> threadIdx: ', threadIdx)
-
-    // let thread = convos[currentThread]
-    // thread = thread || []
-    // console.log('thread: ', thread)
-    // console.log('lastConvo: ', lastConvo)
+    // if it's a new thread..
+    if (threadIdx < 0) {
+      finalJson.push({ thread: currentThread, convos: [] })
+      threadIdx = finalJson.length - 1
+    }
 
     if (threadIdx >= 0) {
       let threadConvos = finalJson[threadIdx].convos
@@ -114,25 +119,47 @@ function markdownToJson (markdown) {
       let from = 'bot'
 
       if (firstChar === '-') {
-        // bot
-        if (line[1] === ' ') {
-          say = line.substring(2)
-        // human
-        } else if (line[1] === '-' & line[2] === ' ') {
-          say = line.substring(3)
-          from = 'user'
+        // link []()
+        let foundLink = line.match(/\[(.*?)\)/i)
+        // images ![]()
+        let foundImage = line.match(/!\[(.*?)\)/i)
+
+        // if it's pure text...
+        if (!foundImage && !foundLink) {
+          // bot
+          if (line[1] === ' ') {
+            say = line.substring(2)
+          // human
+          } else if (line[1] === '-' & line[2] === ' ') {
+            say = line.substring(3)
+            from = 'user'
+          }
+          threadConvos.push({
+            'say': say,
+            'type': type,
+            'from': from
+          })
+        } else {
+          let txt = line.match(/\[(.*?)\]/i)
+          txt = txt ? txt[1] : ''
+
+          let link = line.match(/\((.*?)\)/i)
+          link = link ? link[1] : ''
+
+          threadConvos.push({
+            'say': txt,
+            'url': link,
+            'type': foundImage ? 'image' : 'url',
+            'from': from
+          })
         }
-        threadConvos.push({
-          'say': say,
-          'type': type,
-          'from': from
-        })
       // [ : quick replies
       } else if (firstChar === '[') {
         // payload number is after ':'
         // split into [text, payload]
         const idx = line.lastIndexOf(':')
         let split
+        let payload
         // if there's no ':', there's no payload
         if (idx >= 0) {
           // slice to remove first and last square brackets
@@ -146,11 +173,12 @@ function markdownToJson (markdown) {
             ''
           ]
         }
-
-        const selected = split[1].slice(-1) === '*'
+        payload = split[1]
+        const selected = payload.slice(-1) === '*'
+        payload = payload.replace(/\*/g, '')
 
         // change previous convo to quick reply
-        if (lastConvoInThread.type && lastConvoInThread.type === 'text') {
+        if (lastConvoInThread.type && !lastConvoInThread.type.includes('quick replies')) {
           // [] : open ended question with quick replies
           if (secondChar === ']') {
             lastConvoInThread.type = 'ask quick replies'
@@ -162,49 +190,37 @@ function markdownToJson (markdown) {
 
         lastConvoInThread.replies.push({
           title: split[0],
-          payload: split[1],
+          payload: payload,
           selected: selected
         })
       }
     }
   }
-  console.log('>>> finalJson: ', finalJson)
+  // console.log('>>> finalJson: ', finalJson)
   return finalJson
 }
 
-function formatMarkdown (str) {
+function formatMarkdown (convoObj) {
   // link []()
   // find between [ and ) to replace with href HTML
-  if (str) {
-    let foundLink = str.match(/\[(.*?)\)/i)
-    foundLink = foundLink ? foundLink[0] : ''
+  if (convoObj) {
+    let html
+    let type = convoObj.type
+    let txt = convoObj.say
 
-    // images ![]()
-    let foundImage = str.match(/!\[(.*?)\)/i)
-    foundImage = foundImage ? foundImage[0] : ''
+    if (convoObj.url) {
+      let link = convoObj.url
+      let txt = convoObj.say
 
-    if (foundLink !== '' & foundImage === '') {
-      let txt = str.match(/\[(.*?)\]/i)
-      txt = txt ? txt[1] : ''
-
-      let link = str.match(/\((.*?)\)/i)
-      link = link ? link[1] : ''
-
-      let formattedLink = `<a href="${link}">${txt}</a>`
-      str = str.replace(foundLink, formattedLink)
+      if (type === 'url') {
+        html = `<a href="${link}">${txt}</a>`
+      } else if (type === 'image') {
+        html = `<img src="${link}" alt="${txt}">`
+      }
+    } else {
+      return txt
     }
-
-    if (foundImage !== '') {
-      let txt = str.match(/\[(.*?)\]/i)
-      txt = txt ? txt[1] : ''
-
-      let link = str.match(/\((.*?)\)/i)
-      link = link ? link[1] : ''
-
-      let formattedLink = `<img src="${link}" alt="${txt}">`
-      str = str.replace(foundImage, formattedLink)
-    }
-    return str
+    return html
   }
 }
 
@@ -215,64 +231,55 @@ function jsonToNom (js) {
   #fillArrows: true
   #zoom: 0.8
   #.quickreply: fill=#fcedb5 visual=roundrect
-  #.openended: fill=#fcedb5
+  #.openended: fill=#fcedb5 visual=input
   
   `
-
   // for each thread in flow
-  // console.log('>> js length: ', js.length)
   for (let i = 0; i < js.length; i++) {
     let thread = js[i]
     let key = thread['thread']
-
-    console.log('>> thread: ', thread)
 
     md += `\n[${key}\n]`
     // for each convo in thread
     for (let j = 0; j < thread.convos.length; j++) {
       let convo = thread.convos[j]
-      // console.log('>> convo: ', convo)
-      // console.log('j: ', j)
-      // console.log('md: ', md)
-      // console.log('md slice: ', md.slice(0, -1))
+      let prevConvo = thread.convos[j - 1]
+      // if there's text after quick replies, skip as there's no way to reach it
+      if (prevConvo && prevConvo.type.includes('quick replies')) {
+      } else {
+        // create quick replies with payload
+        if (convo && convo.type.includes('quick replies')) {
+          for (let r = 0; r < convo.replies.length; r++) {
+            let reply = convo.replies[r]
+            let title = `${key}: ${reply.title}`
+            let diagType = 'quickreply'
 
-      // remove ] at the end of the string
-      md = md.slice(0, -1) + `| ` + `${convo.say}\n]`
-      // if (j === thread.length - 1) {
-      //   md += `]\n`
-      // }
+            // open ended question
+            if (reply.title === '') {
+              diagType = 'openended'
+              title = `${key}: User answer`
+            }
 
-    //   // create quick replies with payload
-    //   if (flow && flow.type.includes('quick replies')) {
-    //     for (let r = 0; r < flow.replies.length; r++) {
-    //       let reply = flow.replies[r]
-    //       let title = `${key}: ${reply.title}`
-    //       let diagType = 'quickreply'
+            // msg -> quick replies
+            md += `\n[${key}] -> [<${diagType}> ${title}]\n`
 
-    //       // open ended question
-    //       if (reply.title === '') {
-    //         diagType = 'openended'
-    //         title = `${key}: User answer`
-    //       }
-
-    //       // msg -> quick replies
-    //       md += `[${key}] -> [<${diagType}> ${title}]\n`
-
-    //       // quick replies payload -> thread
-    //       // skip if payload is empty. Causes error in nomnoml
-    //       if (reply.payload && reply.payload !== '' && reply.payload !== '[]') {
-    //         md += `[${title}] -> [${reply.payload}]\n`
-    //       }
-    //     }
-    //   }
+            // quick replies payload -> thread
+            // skip if payload is empty. Causes error in nomnoml
+            if (reply.payload && reply.payload !== '' && reply.payload !== '[]') {
+              md += `\n[${title}] -> [${reply.payload}]\n`
+            }
+          }
+        } else {
+          if (convo.say && convo.from === 'bot') {
+            // remove ] at the end of the string
+            md = md.slice(0, -1) + `| ` + `${convo.say}\n]`
+          }
+        }
+      }
     }
     md += `\n`
   }
-  // check if last character is a ]
-  // if (md.slice(-1) !== ']') {
-  //   md += ']'
-  // }
-  console.log('>> md: ', md)
+  // console.log('>> md: ', md)
   return md
 }
 
@@ -295,175 +302,99 @@ export default {
     mdJson () {
       return JSON.stringify(markdownToJson(this.txt), null, 2)
     },
-    textHtml () {
-      let convos = {}
-      let lines = this.txt.split(/\n|\r/g)
-
-      let currentThread = ''
-
-      for (let i = 0; i < lines.length; i++) {
-        let line = lines[i].trim()
-
-        const firstChar = line[0]
-
-        // # for new thread
-        if (firstChar === '#') {
-          currentThread = line.match(/\S+/g)
-          if (currentThread[1]) {
-            currentThread = currentThread[1]
-            convos[currentThread] = []
-          }
-        }
-
-        let thread = convos[currentThread]
-        thread = thread || []
-        let lastConvo = thread[thread.length - 1]
-
-        if (convos[currentThread]) {
-          // [ for quick replies
-          if (firstChar === '[') {
-            // payload number is after ':'
-            // split into [text, payload]
-            const idx = line.lastIndexOf(':')
-
-            // slice to remove first and last square brackets
-            const split = [
-              line.slice(0, idx).slice(1, -1),
-              line.slice(idx + 1).trim()
-            ]
-            // * for selected quick reply
-            const selected = split[1].slice(-1) === '*'
-            split[1] = split[1].replace(/\D/g, '')
-            // add quick replies to previous conversation
-            if (lastConvo.type === 'text') {
-              lastConvo.type = 'quick replies'
-              lastConvo.replies = []
-            }
-            lastConvo.replies.push(
-              {
-                say: split[0],
-                payload: split[1],
-                selected: selected
-              }
-            )
-          }
-
-          // - for bot
-          // -- for user reply (only for simulation)
-          if (firstChar === '-') {
-            // bot
-            if (line[1] === ' ') {
-              convos[currentThread].push(
-                {
-                  'say': line.substring(2),
-                  'type': 'text',
-                  'from': 'bot'
-                }
-              )
-            }
-            // human
-            if (line[1] === '-' & line[2] === ' ') {
-              convos[currentThread].push(
-                {
-                  'say': line.substring(3),
-                  'type': 'text',
-                  'from': 'user'
-                }
-              )
-            }
-          }
-        }
-      }
-
-      // build the HTML
-
+    jsonToHTML () {
+      const flow = markdownToJson(this.txt)
       let chatHtml = ``
-
       // sort threads ascending
-      let threads = Object.keys(convos).sort()
-      // move 'default' thread to the front
-      if (threads.includes('default')) {
-        threads = threads.filter(item => item !== 'default')
-        threads.unshift('default')
-      }
-
+      const threadsArr = flow.map(item => item.thread).sort()
       let goToThread = ''
       // for skipping thread if one quick reply is selected
       let threadsToSkip = []
-      // for each thread...
-      for (let i = 0; i < threads.length; i++) {
-        const flows = convos[threads[i]]
+
+      // for each thread ...
+      for (let i = 0; i < threadsArr.length; i++) {
+        const currentThreadName = threadsArr[i].toString()
+        // find index of json in array
+        let threadIdx = flow.findIndex((item, i) => {
+          return item.thread.toString() === currentThreadName
+        })
+        const allConvos = flow[threadIdx].convos
 
         // for each conversation in thread...
-        for (let j = 0; j < flows.length; j++) {
-          let flow = flows[j]
+        for (let j = 0; j < allConvos.length; j++) {
+          const convo = allConvos[j]
+          const prevConvo = allConvos[j - 1]
 
-          if (goToThread !== '') {
-            if (threads[i].toString() !== goToThread) {
-              continue
-            } else {
-              goToThread = ''
-            }
-          }
-
-          if (!threadsToSkip.includes(threads[i].toString())) {
-            if (flow.type === 'quick replies') {
-              chatHtml += `<div class="msg"><div class="msg-content bot">${formatMarkdown(flow.say)}</div></div>`
-              chatHtml += `<div class="msg-quick-replies">`
-              // loop for each quick reply
-              for (let r = 0; r < flow.replies.length; r++) {
-                const reply = flow.replies[r]
-                chatHtml += `<button type="button" class="quick-replies-btn${reply.selected ? ' selected' : ''}">${reply.say}</button>`
-
-                // go to thread
-                if (reply.selected) {
-                  goToThread = reply.payload
-                } else {
-                  threadsToSkip.push(reply.payload)
-                }
-              }
-              chatHtml += `</div>`
-            } else {
-              if (flow.from === 'bot') {
-                chatHtml += `<div class="msg"><div class="msg-content bot">${formatMarkdown(flow.say)}</div></div>`
+          // skip all conversation after quick reply because it's impossible to reach it
+          if (prevConvo && prevConvo.type.includes('quick replies')) {
+          } else {
+            if (goToThread !== '') {
+              if (currentThreadName !== goToThread) {
+                continue
               } else {
-                chatHtml += `<div class="msg"><div class="msg-content human">${formatMarkdown(flow.say)}</div></div>`
+                goToThread = ''
+              }
+            }
+            // chatbot demo will only pick out the selected quick reply (with * at the end)
+            if (!threadsToSkip.includes(currentThreadName)) {
+              if (convo.type === 'quick replies') {
+                if (convo.say !== '') {
+                  chatHtml += `<div class="msg"><div class="msg-content bot">${formatMarkdown(convo)}</div></div>`
+                }
+                chatHtml += `<div class="msg-quick-replies">`
+                // loop for each quick reply
+                for (let r = 0; r < convo.replies.length; r++) {
+                  const reply = convo.replies[r]
+                  // skip open ended markdown [] by checking if reply.title is empty
+                  if (reply.title && reply.title !== '') {
+                    chatHtml += `<button type="button" class="quick-replies-btn${reply.selected ? ' selected' : ''}">${reply.title}</button>`
+                    // go to thread and skip the non-selected threads by adding them to `threadsToSkip`
+                  }
+                  // if quick reply is selected, go to thread. Skip the other threads.
+                  if (reply.selected) {
+                    goToThread = reply.payload
+                  } else {
+                    threadsToSkip.push(reply.payload)
+                  }
+                }
+                chatHtml += `</div>`
+              } else {
+                if (convo.from === 'bot') {
+                  chatHtml += `<div class="msg"><div class="msg-content bot">${formatMarkdown(convo)}</div></div>`
+                } else {
+                  chatHtml += `<div class="msg"><div class="msg-content human">${formatMarkdown(convo)}</div></div>`
+                }
               }
             }
           }
         }
       }
       chatHtml += ``
-      this.convos = convos
       return chatHtml
     },
     nomnomlMd () {
       let json = markdownToJson(this.txt)
 
-      // console.log('nom: ', nom)
-      // console.log('typeof nom: ', typeof nom)
-      // console.log('nom []: ', nom === [])
-      // console.log('nom is blank: ', nom === '')
-
       // prevent error if json is blank
       if (json && json.length !== 0) {
-        let nom = jsonToNom(json)
-        if (nom && nom.trim() !== '' && nom !== '[]') {
-          // console.log(nomnoml)
-          return nomnoml.renderSvg(nom)
+        try {
+          let nom = jsonToNom(json)
+          if (nom && nom.trim() !== '' && nom !== '[]') {
+            return nomnoml.renderSvg(nom)
+          }
+        } catch (err) {
+          console.log(err)
+          return `Error: ${err}`
         }
       } else {
         return ''
       }
     }
   },
-  mounted () {
+  beforeMount () {
     let lastMarkdown = window.localStorage.getItem('chatMD.last')
     if (lastMarkdown && lastMarkdown !== '' && this.txt !== '') {
-      // this.txt = lastMarkdown
-      this.txt = `
-# 1
-- hello!`
+      this.txt = lastMarkdown
     }
   },
   watch: {
@@ -499,9 +430,9 @@ export default {
   position: relative; */
 }
 
-.inputArea {
+.textField {
   /* height: 100vh ; */
-  height: 100%;
+  height: 100% !important;
 }
 
 .bot-container {
