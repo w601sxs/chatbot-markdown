@@ -307,7 +307,7 @@ export default {
       const flow = markdownToJson(this.txt)
       let chatHtml = ``
       // sort threads ascending
-      const threadsArr = flow.map(item => item.thread).sort()
+      const threadsArr = flow.map(item => item.thread)
       let goToThread = ''
       // for skipping thread if one quick reply is selected
       let threadsToSkip = []
