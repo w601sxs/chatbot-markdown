@@ -24,19 +24,27 @@
             <v-tabs
             v-model="activeTab"
             slider-color="yellow darken-2"
-            centered
             >
-              <v-tab ripple href="#tab-chat">
+              <v-tab nuxt ripple href="#tab-chat">
                 Chat Demo
               </v-tab>
 
-              <v-tab ripple href="#tab-map">
+              <v-tab nuxt ripple href="#tab-map">
                 Flow Map
               </v-tab>
               
-              <v-tab ripple href="#tab-json">
+              <v-tab nuxt ripple href="#tab-json">
                 JSON
               </v-tab>
+              <v-spacer></v-spacer>
+              <v-btn 
+              flat 
+              class="yellow darken-2" small
+              v-clipboard:copy="`https://markdown.cupbots.com/?q=${encodeURI(this.txt)}`"
+              v-clipboard:success="onCopy"
+              v-clipboard:error="onError">
+                Get sharable link
+              </v-btn>
 
               <v-tab-item id="tab-map">
                 <div v-html="nomnomlMd"></div>
@@ -243,7 +251,7 @@ function jsonToNom (js) {
     // for each convo in thread
     for (let j = 0; j < thread.convos.length; j++) {
       let convo = thread.convos[j]
-      console.log('>> convo: ', convo)
+      // console.log('>> convo: ', convo)
       let prevConvo = thread.convos[j - 1]
       // if there's text after quick replies, skip as there's no way to reach it
       if (prevConvo && prevConvo.type.includes('quick replies')) {
@@ -280,7 +288,7 @@ function jsonToNom (js) {
     }
     md += `\n`
   }
-  console.log('>> md: ', md)
+  // console.log('>> md: ', md)
   return md
 }
 
@@ -288,6 +296,7 @@ export default {
   data () {
     return {
       activeTab: 'tab-chat',
+      copyDialog: true,
       convos: {},
       txt: `# 1
 - Good morning
@@ -313,57 +322,62 @@ export default {
       let threadsToSkip = []
 
       // for each thread ...
-      for (let i = 0; i < threadsArr.length; i++) {
-        const currentThreadName = threadsArr[i].toString()
-        // find index of json in array
-        let threadIdx = flow.findIndex((item, i) => {
-          return item.thread.toString() === currentThreadName
-        })
-        const allConvos = flow[threadIdx].convos
+      console.log('threadsArr:', threadsArr.length)
+      if (threadsArr) {
+        for (let i = 0; i < threadsArr.length; i++) {
+          if (threadsArr[i]) {
+            const currentThreadName = threadsArr[i].toString()
+            // find index of json in array
+            let threadIdx = flow.findIndex((item, i) => {
+              return item.thread.toString() === currentThreadName
+            })
+            const allConvos = flow[threadIdx].convos
 
-        // for each conversation in thread...
-        for (let j = 0; j < allConvos.length; j++) {
-          const convo = allConvos[j]
-          const prevConvo = allConvos[j - 1]
+            // for each conversation in thread...
+            for (let j = 0; j < allConvos.length; j++) {
+              const convo = allConvos[j]
+              const prevConvo = allConvos[j - 1]
 
-          // skip all conversation after quick reply because it's impossible to reach it
-          if (prevConvo && prevConvo.type.includes('quick replies')) {
-          } else {
-            if (goToThread !== '') {
-              if (currentThreadName !== goToThread) {
-                continue
+              // skip all conversation after quick reply because it's impossible to reach it
+              if (prevConvo && prevConvo.type.includes('quick replies')) {
               } else {
-                goToThread = ''
-              }
-            }
-            // chatbot demo will only pick out the selected quick reply (with * at the end)
-            if (!threadsToSkip.includes(currentThreadName)) {
-              if (convo.type === 'quick replies') {
-                if (convo.say !== '') {
-                  chatHtml += `<div class="msg"><div class="msg-content bot">${formatMarkdown(convo)}</div></div>`
-                }
-                chatHtml += `<div class="msg-quick-replies">`
-                // loop for each quick reply
-                for (let r = 0; r < convo.replies.length; r++) {
-                  const reply = convo.replies[r]
-                  // skip open ended markdown [] by checking if reply.title is empty
-                  if (reply.title && reply.title !== '') {
-                    chatHtml += `<button type="button" class="quick-replies-btn${reply.selected ? ' selected' : ''}">${reply.title}</button>`
-                    // go to thread and skip the non-selected threads by adding them to `threadsToSkip`
-                  }
-                  // if quick reply is selected, go to thread. Skip the other threads.
-                  if (reply.selected) {
-                    goToThread = reply.payload
+                if (goToThread !== '') {
+                  if (currentThreadName !== goToThread) {
+                    continue
                   } else {
-                    threadsToSkip.push(reply.payload)
+                    goToThread = ''
                   }
                 }
-                chatHtml += `</div>`
-              } else {
-                if (convo.from === 'bot') {
-                  chatHtml += `<div class="msg"><div class="msg-content bot">${formatMarkdown(convo)}</div></div>`
-                } else {
-                  chatHtml += `<div class="msg"><div class="msg-content human">${formatMarkdown(convo)}</div></div>`
+                // chatbot demo will only pick out the selected quick reply (with * at the end)
+                if (!threadsToSkip.includes(currentThreadName)) {
+                  if (convo.type === 'quick replies') {
+                    if (convo.say !== '') {
+                      chatHtml += `<div class="msg"><div class="msg-content bot">${formatMarkdown(convo)}</div></div>`
+                    }
+                    chatHtml += `<div class="msg-quick-replies">`
+                    // loop for each quick reply
+                    for (let r = 0; r < convo.replies.length; r++) {
+                      const reply = convo.replies[r]
+                      // skip open ended markdown [] by checking if reply.title is empty
+                      if (reply.title && reply.title !== '') {
+                        chatHtml += `<button type="button" class="quick-replies-btn${reply.selected ? ' selected' : ''}">${reply.title}</button>`
+                        // go to thread and skip the non-selected threads by adding them to `threadsToSkip`
+                      }
+                      // if quick reply is selected, go to thread. Skip the other threads.
+                      if (reply.selected) {
+                        goToThread = reply.payload
+                      } else {
+                        threadsToSkip.push(reply.payload)
+                      }
+                    }
+                    chatHtml += `</div>`
+                  } else {
+                    if (convo.from === 'bot') {
+                      chatHtml += `<div class="msg"><div class="msg-content bot">${formatMarkdown(convo)}</div></div>`
+                    } else {
+                      chatHtml += `<div class="msg"><div class="msg-content human">${formatMarkdown(convo)}</div></div>`
+                    }
+                  }
                 }
               }
             }
@@ -392,10 +406,24 @@ export default {
       }
     }
   },
+  methods: {
+    onCopy: (e) => {
+      alert('URL copied!')
+    },
+    onError: (e) => {
+      alert('Failed to copy URL')
+    }
+  },
   beforeMount () {
-    let lastMarkdown = window.localStorage.getItem('chatMD.last')
-    if (lastMarkdown && lastMarkdown !== '' && this.txt !== '') {
-      this.txt = lastMarkdown
+    const query = this.$route.query.q
+    if (query) {
+      this.txt = decodeURI(query)
+      console.log(decodeURI(query))
+    } else {
+      let lastMarkdown = window.localStorage.getItem('chatMD.last')
+      if (lastMarkdown && lastMarkdown !== '' && this.txt !== '') {
+        this.txt = lastMarkdown
+      }
     }
   },
   watch: {

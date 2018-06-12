@@ -15,6 +15,7 @@
     "nomnoml": "^0.2.0",
     "nuxt": "^1.0.0",
     "sass-loader": "^7.0.1",
+    "vue-clipboard2": "^0.1.1",
     "vuetify": "^1.0.0"
   },
   "devDependencies": {
