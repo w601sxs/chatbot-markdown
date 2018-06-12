@@ -41,7 +41,7 @@
               <v-btn 
               flat 
               class="yellow darken-2" small
-              v-clipboard:copy="`https://markdown.cupbots.com/?q=${encodeURI(this.txt)}`"
+              v-clipboard:copy="`https://markdown.cupbots.com/?q=${encodeURIComponent(this.txt)}`"
               v-clipboard:success="onCopy"
               v-clipboard:error="onError">
                 Get sharable link
