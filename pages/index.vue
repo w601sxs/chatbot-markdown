@@ -24,9 +24,10 @@
             <v-tabs
             v-model="activeTab"
             slider-color="yellow darken-2"
+            centered
             >
               <v-tab nuxt ripple href="#tab-chat">
-                Chat Demo
+                Markdown
               </v-tab>
 
               <v-tab nuxt ripple href="#tab-map">
@@ -97,6 +98,7 @@ function markdownToJson (markdown) {
     let line = lines[i]
     const firstChar = line[0]
     const secondChar = line[1]
+    const lastChar = line[line.length - 1]
     // # for new thread
     if (firstChar === '#') {
       currentThread = line.match(/\S+/g)
@@ -186,21 +188,32 @@ function markdownToJson (markdown) {
         payload = payload.replace(/\*/g, '')
 
         // change previous convo to quick reply
-        if (lastConvoInThread.type && !lastConvoInThread.type.includes('quick replies')) {
-          // [] : open ended question with quick replies
-          if (secondChar === ']') {
-            lastConvoInThread.type = 'ask quick replies'
-          } else {
-            lastConvoInThread.type = 'quick replies'
+        if (lastConvoInThread) {
+          if (lastConvoInThread.type && !lastConvoInThread.type.includes('quick replies')) {
+            // [] : open ended question with quick replies
+            if (secondChar === ']') {
+              lastConvoInThread.type = 'ask quick replies'
+            } else {
+              lastConvoInThread.type = 'quick replies'
+            }
+            lastConvoInThread.replies = []
           }
-          lastConvoInThread.replies = []
-        }
 
-        lastConvoInThread.replies.push({
-          title: split[0],
-          payload: payload,
-          selected: selected
-        })
+          lastConvoInThread.replies.push({
+            title: split[0],
+            payload: payload,
+            selected: selected
+          })
+        }
+      // {} to call another flow
+      } else if (firstChar === '{' && lastChar === '}') {
+        finalJson[threadIdx].gotoFlow = line.match(/\{(.*?)\}/i)[1]
+      // : to go to next thread
+      } else if (firstChar === ':') {
+        const goThread = line.match(/[^: ]/g)
+        if (goThread) {
+          finalJson[threadIdx].gotoThread = line.match(/[^: ]/g)[0]
+        }
       }
     }
   }
@@ -234,12 +247,13 @@ function formatMarkdown (convoObj) {
 
 function jsonToNom (js) {
   let md = `
-  #fill: #fff; #fdf6e3
-  #lineWidth: 2
-  #fillArrows: true
-  #zoom: 0.8
-  #.quickreply: fill=#fcedb5 visual=roundrect
-  #.openended: fill=#fcedb5 visual=input
+    #fill: #fff; #fdf6e3
+    #lineWidth: 2
+    #fillArrows: true
+    #zoom: 0.8
+    #.quickreply: fill=#fcedb5 visual=roundrect
+    #.openended: fill=#fcedb5 visual=input
+    #.callflow: fill=#dedede visual=receiver bold
   
   `
   // for each thread in flow
@@ -247,7 +261,22 @@ function jsonToNom (js) {
     let thread = js[i]
     let key = thread['thread']
 
-    md += `\n[${key}\n]`
+    // calls another flow and link back here
+    if (thread.gotoFlow) {
+      let diagType = 'callflow'
+      md += `\n[<${diagType}> ${key}|\n`
+      if (thread.gotoFlow && thread.gotoFlow !== key) {
+        md += `${thread.gotoFlow}]\n`
+      } else {
+        md += `]`
+      }
+      if (thread.gotoThread) {
+        md += `  \n[${key}] -> [${thread.gotoThread}]\n`
+      }
+    } else {
+      md += `\n[${key}\n]`
+    }
+
     // for each convo in thread
     for (let j = 0; j < thread.convos.length; j++) {
       let convo = thread.convos[j]
@@ -322,7 +351,7 @@ export default {
       let threadsToSkip = []
 
       // for each thread ...
-      console.log('threadsArr:', threadsArr.length)
+      // console.log('threadsArr:', threadsArr.length)
       if (threadsArr) {
         for (let i = 0; i < threadsArr.length; i++) {
           if (threadsArr[i]) {
@@ -331,8 +360,12 @@ export default {
             let threadIdx = flow.findIndex((item, i) => {
               return item.thread.toString() === currentThreadName
             })
-            const allConvos = flow[threadIdx].convos
-
+            let currentFlow = flow[threadIdx]
+            // calls another flow
+            if (currentFlow.gotoFlow) {
+              chatHtml += `<div class="callFlow"><em>Execute flow: <u>${currentFlow.gotoFlow}</u></em></div>`
+            }
+            const allConvos = currentFlow.convos
             // for each conversation in thread...
             for (let j = 0; j < allConvos.length; j++) {
               const convo = allConvos[j]
@@ -359,10 +392,11 @@ export default {
                     for (let r = 0; r < convo.replies.length; r++) {
                       const reply = convo.replies[r]
                       // skip open ended markdown [] by checking if reply.title is empty
-                      if (reply.title && reply.title !== '') {
-                        chatHtml += `<button type="button" class="quick-replies-btn${reply.selected ? ' selected' : ''}">${reply.title}</button>`
-                        // go to thread and skip the non-selected threads by adding them to `threadsToSkip`
-                      }
+                      // if (reply.title) {
+                      chatHtml += `<button type="button" class="quick-replies-btn${reply.selected ? ' selected' : ''}">${reply.title}</button>`
+                      // }
+
+                      // go to thread and skip the non-selected threads by adding them to `threadsToSkip`
                       // if quick reply is selected, go to thread. Skip the other threads.
                       if (reply.selected) {
                         goToThread = reply.payload
@@ -520,5 +554,10 @@ export default {
 
 .quick-replies-btn.selected {
   background-color: #ffd73c;
+}
+
+.callFlow {
+  margin-top: 15px;
+  text-align: center;
 }
 </style>
