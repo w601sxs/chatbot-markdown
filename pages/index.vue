@@ -26,14 +26,15 @@
             slider-color="yellow darken-2"
             centered
             >
-              <v-tab nuxt ripple href="#tab-chat">
-                Markdown
-              </v-tab>
 
               <v-tab nuxt ripple href="#tab-map">
                 Flow Map
               </v-tab>
               
+              <v-tab nuxt ripple href="#tab-chat">
+                Markdown
+              </v-tab>
+
               <v-tab nuxt ripple href="#tab-json">
                 JSON
               </v-tab>
@@ -48,7 +49,21 @@
               </v-btn>
 
               <v-tab-item id="tab-map">
-                <div v-html="nomnomlMd"></div>
+                <v-layout row>
+                  <v-flex xs12 sm5>
+                    <v-text-field
+                      class="textField"
+                      name="input-1"
+                      rows="10"
+                      autofocus
+                      textarea
+                      v-model="txt"
+                    ></v-text-field>
+                  </v-flex>
+                  <v-flex xs12 sm5>
+                    <div v-html="nomnomlMd"></div>  
+                  </v-flex>
+                </v-layout>
               </v-tab-item>
 
               <v-tab-item id="tab-chat">
@@ -210,9 +225,9 @@ function markdownToJson (markdown) {
         finalJson[threadIdx].gotoFlow = line.match(/\{(.*?)\}/i)[1]
       // : to go to next thread
       } else if (firstChar === ':') {
-        const goThread = line.match(/[^: ]/g)
+        const goThread = line.match(/[^: ]*$/g)
         if (goThread) {
-          finalJson[threadIdx].gotoThread = line.match(/[^: ]/g)[0]
+          finalJson[threadIdx].gotoThread = goThread[0]
         }
       }
     }
@@ -250,13 +265,14 @@ function jsonToNom (js) {
     #fill: #fff; #fdf6e3
     #lineWidth: 2
     #fillArrows: true
-    #zoom: 0.8
+    #spacing: 40
+    #padding: 8
     #.quickreply: fill=#fcedb5 visual=roundrect
     #.openended: fill=#fcedb5 visual=input
     #.callflow: fill=#dedede visual=receiver bold
   
   `
-  // for each thread in flow
+  // for each thread
   for (let i = 0; i < js.length; i++) {
     let thread = js[i]
     let key = thread['thread']
@@ -270,9 +286,9 @@ function jsonToNom (js) {
       } else {
         md += `]`
       }
-      if (thread.gotoThread) {
-        md += `  \n[${key}] -> [${thread.gotoThread}]\n`
-      }
+      // if (thread.gotoThread) {
+      //   md += `  \n[${key}] -> [${thread.gotoThread}]\n`
+      // }
     } else {
       md += `\n[${key}\n]`
     }
@@ -286,6 +302,7 @@ function jsonToNom (js) {
       if (prevConvo && prevConvo.type.includes('quick replies')) {
         break
       }
+      // normal bot conversation
       if (convo.say && convo.from === 'bot') {
         // remove ] at the end of the string
         md = md.slice(0, -1) + `| ` + `${convo.say}\n]`
@@ -315,6 +332,11 @@ function jsonToNom (js) {
         }
       }
     }
+
+    if (thread.gotoThread) {
+      md = md + `\n[${key}] -> [${thread.gotoThread}]`
+    }
+
     md += `\n`
   }
   // console.log('>> md: ', md)
@@ -324,7 +346,7 @@ function jsonToNom (js) {
 export default {
   data () {
     return {
-      activeTab: 'tab-chat',
+      activeTab: 'tab-map',
       copyDialog: true,
       convos: {},
       txt: `# 1
@@ -351,7 +373,6 @@ export default {
       let threadsToSkip = []
 
       // for each thread ...
-      // console.log('threadsArr:', threadsArr.length)
       if (threadsArr) {
         for (let i = 0; i < threadsArr.length; i++) {
           if (threadsArr[i]) {
