@@ -105,7 +105,7 @@ import nomnoml from 'nomnoml'
 
 // creates an array of flow which contains: thread > convo
 // [{ thread: 1, convo: [{ say: '', type: '', 'from: ''}, ...]}, { thread: 2, ...}]
-function markdownToJson (markdown) {
+let markdownToJson = (markdown) => {
   let finalJson = []
   let lines = markdown.split(/\n|\r/g)
   let currentThread
@@ -129,7 +129,10 @@ function markdownToJson (markdown) {
 
     // if it's a new thread..
     if (threadIdx < 0) {
-      finalJson.push({ thread: currentThread, convos: [] })
+      finalJson.push({
+        thread: currentThread,
+        convos: []
+      })
       threadIdx = finalJson.length - 1
     }
 
@@ -154,7 +157,7 @@ function markdownToJson (markdown) {
           // bot
           if (line[1] === ' ') {
             say = line.substring(2)
-          // human
+            // human
           } else if (line[1] === '-' & line[2] === ' ') {
             say = line.substring(3)
             from = 'user'
@@ -178,13 +181,13 @@ function markdownToJson (markdown) {
             'from': from
           })
         }
-      // [ : quick replies
+        // [ : quick replies
       } else if (firstChar === '[') {
         // payload number is after ':'
         // split into [text, payload]
         const idx = line.lastIndexOf(':')
         let split
-        let payload
+        let payload, openingText
         // if there's no ':', there's no payload
         if (idx >= 0) {
           // slice to remove first and last square brackets
@@ -202,6 +205,15 @@ function markdownToJson (markdown) {
         const selected = payload.slice(-1) === '*'
         payload = payload.replace(/\*/g, '')
 
+        let groups = payload.match(/[^: ]+(.*?)/g)
+
+        if (groups) {
+          if (groups.length > 0) {
+            // join by space and remove {{ }}
+            openingText = groups.slice(1).join(' ').slice(2, -2)
+          }
+        }
+
         // change previous convo to quick reply
         if (lastConvoInThread) {
           if (lastConvoInThread.type && !lastConvoInThread.type.includes('quick replies')) {
@@ -217,17 +229,22 @@ function markdownToJson (markdown) {
           lastConvoInThread.replies.push({
             title: split[0],
             payload: payload,
-            selected: selected
+            selected: selected,
+            openingText: openingText
           })
         }
-      // {} to call another flow
+        // {} to call another flow
       } else if (firstChar === '{' && lastChar === '}') {
         finalJson[threadIdx].gotoFlow = line.match(/\{(.*?)\}/i)[1]
-      // : to go to next thread
+        // : to go to next thread
       } else if (firstChar === ':') {
-        const goThread = line.match(/[^: ]*$/g)
-        if (goThread) {
-          finalJson[threadIdx].gotoThread = goThread[0]
+        let groups = line.match(/[^: ]+/g)
+
+        if (groups) {
+          finalJson[threadIdx].gotoThread = groups[0]
+          if (groups.length > 0) {
+            finalJson[threadIdx].openingText = groups.slice(1).join(' ').slice(2, -2)
+          }
         }
       }
     }
@@ -327,14 +344,35 @@ function jsonToNom (js) {
           // quick replies payload -> thread
           // skip if payload is empty. Causes error in nomnoml
           if (reply.payload && reply.payload !== '' && reply.payload !== '[]') {
-            md += `\n[${title}] -> [${reply.payload}]\n`
+            // if has openingText, the payload is just the text before {{ }}.
+            // the text inside {{ }} is used a opening text for customization
+            if (reply.openingText) {
+              let groups = reply.payload.match(/[^: ]+/g)
+              let payload, openingText
+              if (groups) {
+                payload = groups[0]
+                if (groups.length > 0) {
+                  // join by space and remove {{ }}
+                  openingText = groups.slice(1).join(' ').slice(2, -2)
+                }
+              }
+              md += `\n[${title}] -- [${openingText}]\n`
+              md += `\n[${openingText}] -> [${payload}]\n`
+            } else {
+              md += `\n[${title}] -> [${reply.payload}]\n`
+            }
           }
         }
       }
     }
 
     if (thread.gotoThread) {
-      md = md + `\n[${key}] -> [${thread.gotoThread}]`
+      if (thread.openingText) {
+        md += `\n[${key}] -- [${thread.openingText}]\n`
+        md += `\n[${thread.openingText}] -> [${thread.gotoThread}]\n`
+      } else {
+        md = md + `\n[${key}] -> [${thread.gotoThread}]`
+      }
     }
 
     md += `\n`
