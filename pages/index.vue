@@ -50,7 +50,7 @@
 
               <v-tab-item id="tab-map">
                 <v-layout row>
-                  <v-flex xs12 sm5>
+                  <!-- <v-flex xs12 sm5>
                     <v-text-field
                       class="textField"
                       name="input-1"
@@ -59,8 +59,8 @@
                       textarea
                       v-model="txt"
                     ></v-text-field>
-                  </v-flex>
-                  <v-flex xs12 sm5>
+                  </v-flex> -->
+                  <v-flex xs12>
                     <div v-html="nomnomlMd"></div>  
                   </v-flex>
                 </v-layout>
