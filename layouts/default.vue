@@ -1,28 +1,34 @@
 <template>
   <v-app>
-    <v-layout column justify-center align-center>
+    <v-layout column>
       <v-flex xs12 text-xs-center>
-        <div class="display-1 appTitle mb-2">Chatbot Markdown</div>
+        <div class="display-1 appTitle my-3">Chatbot Markdown</div>
         <div class="subheading">For companies and developers to prototype chatbot faster.</div>
       </v-flex>
+      
+      <!-- Title -->
+      
       <a href="https://cupbots.com" class="headerLink mt-2">
-      <v-flex xs12 py-0 text-xs-center>
-        A project by
-        <span>
-        Cupbots
-        <v-avatar size="25px">
-          <img src="~/static/site-icon.png" alt="Cupbots">
-        </v-avatar>
-        </span>
-      </v-flex>
+        <v-flex xs12 py-0 text-xs-center>
+          A project by
+          <span>
+          Cupbots
+          <v-avatar size="25px">
+            <img src="~/static/site-icon.png" alt="Cupbots">
+          </v-avatar>
+          </span>
+        </v-flex>
       </a>
+
+      <!-- Menu -->
+      
+      <app-menu></app-menu>
+      <v-content>
+        <v-container fluid>
+          <nuxt />
+        </v-container>
+      </v-content>
     </v-layout>
-    <app-menu></app-menu>
-    <v-content>
-      <v-container fluid>
-        <nuxt />
-      </v-container>
-    </v-content>
     
     <v-footer>
       <v-layout row wrap justify-center>
