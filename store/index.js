@@ -1,9 +1,13 @@
 export const state = () => ({
-  sidebar: false
+  txt: `# 1
+- Good morning
+- Ummm.... hello? 
+[Fine]: 2
+[Bad :(]: 3*
+
+# 2
+-- I'm fine, thanks!`
 })
 
 export const mutations = {
-  toggleSidebar (state) {
-    state.sidebar = !state.sidebar
-  }
 }

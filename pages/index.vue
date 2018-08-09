@@ -1,102 +1,78 @@
  <template>
-  <div class="main-container">
-    <section class="hero">
-      <v-container fluid>
-        <v-layout column justify-center align-center>
-          <v-flex xs12 text-xs-center>
-            <div class="display-2 appTitle mb-2">Chatbot Markdown</div>
-            <div class="title">For companies and developers to prototype chatbot faster.</div>
-          </v-flex>
-          <a href="https://cupbots.com" class="headerLink mt-2">
-          <v-flex xs12 py-0 text-xs-center>
-            Built by Shawn at 
-            <span>
-            Cupbots
-            <v-avatar size="25px">
-              <img src="~/static/site-icon.png" alt="Cupbots">
-            </v-avatar>
-            </span>
-          </v-flex>
-          </a>
-        </v-layout>
-        <v-layout row class="textArea mt-3">
-          <v-flex xs12>
-            <v-tabs
-            v-model="activeTab"
-            slider-color="yellow darken-2"
-            centered
-            >
+  <v-layout row class="textArea mt-3">
+    <v-flex xs12>
+      <v-tabs
+      v-model="activeTab"
+      slider-color="yellow darken-2"
+      centered
+      >
 
-              <v-tab nuxt ripple href="#tab-map">
-                Flow Map
-              </v-tab>
-              
-              <v-tab nuxt ripple href="#tab-chat">
-                Markdown
-              </v-tab>
+        <v-tab nuxt ripple href="#tab-map">
+          Flow Map
+        </v-tab>
+        
+        <v-tab nuxt ripple href="#tab-chat">
+          Markdown
+        </v-tab>
 
-              <v-tab nuxt ripple href="#tab-json">
-                JSON
-              </v-tab>
-              <v-spacer></v-spacer>
-              <v-btn 
-              flat 
-              class="yellow darken-2" small
-              v-clipboard:copy="`https://markdown.cupbots.com/?q=${encodeURIComponent(this.txt)}`"
-              v-clipboard:success="onCopy"
-              v-clipboard:error="onError">
-                Get sharable link
-              </v-btn>
+        <v-tab nuxt ripple href="#tab-json">
+          JSON
+        </v-tab>
+        <v-spacer></v-spacer>
+        <v-btn 
+        flat 
+        class="yellow darken-2" small
+        v-clipboard:copy="`https://markdown.cupbots.com/?q=${encodeURIComponent(this.txt)}`"
+        v-clipboard:success="onCopy"
+        v-clipboard:error="onError">
+          Get sharable link
+        </v-btn>
 
-              <v-tab-item id="tab-map">
-                <v-layout row>
-                  <!-- <v-flex xs12 sm5>
-                    <v-text-field
-                      class="textField"
-                      name="input-1"
-                      rows="10"
-                      autofocus
-                      textarea
-                      v-model="txt"
-                    ></v-text-field>
-                  </v-flex> -->
-                  <v-flex xs12>
-                    <div v-html="nomnomlMd"></div>  
-                  </v-flex>
-                </v-layout>
-              </v-tab-item>
+        <v-tab-item id="tab-map">
+          <v-layout row>
+            <!-- <v-flex xs12 sm5>
+              <v-text-field
+                class="textField"
+                name="input-1"
+                rows="10"
+                autofocus
+                textarea
+                v-model="txt"
+              ></v-text-field>
+            </v-flex> -->
+            <v-flex xs12>
+              <div v-html="nomnomlMd"></div>  
+            </v-flex>
+          </v-layout>
+        </v-tab-item>
 
-              <v-tab-item id="tab-chat">
-                <v-layout row>
-                  <v-flex xs12 sm5>
-                    <v-text-field
-                      class="textField"
-                      name="input-1"
-                      rows="10"
-                      autofocus
-                      textarea
-                      v-model="txt"
-                    ></v-text-field>
-                  </v-flex>
-                  <v-spacer></v-spacer>
-                  <v-flex xs12 sm6>
-                    <div class="bot-container">
-                      <div class="bot-msg-container" v-html="jsonToHTML"></div>
-                    </div>
-                  </v-flex>
-                </v-layout>
-              </v-tab-item>
+        <v-tab-item id="tab-chat">
+          <v-layout row>
+            <v-flex xs12 sm5>
+              <v-text-field
+                class="textField"
+                name="input-1"
+                rows="10"
+                autofocus
+                textarea
+                v-model="txt"
+              ></v-text-field>
+            </v-flex>
+            <v-spacer></v-spacer>
+            <v-flex xs12 sm6>
+              <div class="bot-container">
+                <div class="bot-msg-container" v-html="jsonToHTML"></div>
+              </div>
+            </v-flex>
+          </v-layout>
+        </v-tab-item>
 
-              <v-tab-item id="tab-json">
-                <pre>{{ mdJson }}</pre>
-              </v-tab-item>
-            </v-tabs>
-          </v-flex>
-        </v-layout>
-        <!-- {{ convos }} -->
-      </v-container>
-    </section>
-  </div>    
+        <v-tab-item id="tab-json">
+          <pre>{{ mdJson }}</pre>
+        </v-tab-item>
+      </v-tabs>
+    </v-flex>
+  </v-layout>
 </template>
 
 
@@ -537,10 +513,6 @@ export default {
   overflow: scroll;
   position: relative;
   height: calc(100vh - 250px);
-}
-
-.appTitle {
-  font-weight: 700;
 }
 
 .hero {
