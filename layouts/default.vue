@@ -84,6 +84,17 @@
       onError: (e) => {
         alert('Failed to copy URL')
       }
+    },
+    beforeMount () {
+      const query = this.$route.query.q
+      if (query) {
+        this.$store.commit(decodeURI(query))
+      } else {
+        let lastMarkdown = window.localStorage.getItem('chatMD.last')
+        if (lastMarkdown && lastMarkdown !== '' && this.txt !== '') {
+          this.$store.commit(lastMarkdown)
+        }
+      }
     }
   }
 </script>

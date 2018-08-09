@@ -10,4 +10,7 @@ export const state = () => ({
 })
 
 export const mutations = {
+  'SET_MARKDOWN' (state, txt) {
+    state.txt = txt
+  }
 }
