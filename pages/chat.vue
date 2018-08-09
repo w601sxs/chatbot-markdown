@@ -2,7 +2,7 @@
   <v-layout>
     <v-flex xs12>
       <div class="bot-container">
-        <div class="bot-msg-container" v-html="jsonToHTML"></div>
+        <div class="bot-msg-container" v-html="jsonToHTML()"></div>
       </div>
     </v-flex>
   </v-layout>
@@ -10,10 +10,11 @@
 
 <script>
 import { jsonToHTML } from '~/utils/helpers'
+
 export default {
   methods: {
     jsonToHTML () {
-      return jsonToHTML()
+      return jsonToHTML(this.$store.state.txt)
     }
   }
 }

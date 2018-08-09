@@ -23,7 +23,8 @@ module.exports = {
     { src: '~/plugins/vuetify.js' }
   ],
   css: [
-    '~/assets/style/app.styl'
+    '~/assets/style/app.styl',
+    '~/assets/css/main.css'
   ],
   loading: { color: '#3B8070' },
   /*
