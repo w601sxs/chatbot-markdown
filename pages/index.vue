@@ -417,7 +417,9 @@ export default {
             const currentThreadName = threadsArr[i].toString()
             // find index of json in array
             let threadIdx = flow.findIndex((item, i) => {
-              return item.thread.toString() === currentThreadName
+              if (item && item.thread) {
+                return item.thread.toString() === currentThreadName
+              }
             })
             let currentFlow = flow[threadIdx]
             // calls another flow
