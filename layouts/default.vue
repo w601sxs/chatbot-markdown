@@ -27,7 +27,7 @@
         <v-btn 
         flat 
         class="yellow darken-2" small
-        v-clipboard:copy="`https://markdown.cupbots.com/?q=${encodeURIComponent(this.txt)}`"
+        v-clipboard:copy="`https://markdown.cupbots.com/?q=${encodeURIComponent(this.$store.state.txt)}`"
         v-clipboard:success="onCopy"
         v-clipboard:error="onError">
           Get sharable link
@@ -75,6 +75,14 @@
         right: true,
         rightDrawer: false,
         title: 'Vuetify.js'
+      }
+    },
+    methods: {
+      onCopy: (e) => {
+        alert('URL copied!')
+      },
+      onError: (e) => {
+        alert('Failed to copy URL')
       }
     }
   }

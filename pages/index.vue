@@ -16,14 +16,6 @@ export default {
   },
   computed: {
   },
-  methods: {
-    onCopy: (e) => {
-      alert('URL copied!')
-    },
-    onError: (e) => {
-      alert('Failed to copy URL')
-    }
-  },
   beforeMount () {
     const query = this.$route.query.q
     if (query) {
