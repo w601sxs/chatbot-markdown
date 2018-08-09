@@ -23,6 +23,17 @@
       <!-- Menu -->
       
       <app-menu></app-menu>
+      <v-flex xs12 class="text-xs-center">
+        <v-btn 
+        flat 
+        class="yellow darken-2" small
+        v-clipboard:copy="`https://markdown.cupbots.com/?q=${encodeURIComponent(this.txt)}`"
+        v-clipboard:success="onCopy"
+        v-clipboard:error="onError">
+          Get sharable link
+        </v-btn>
+      </v-flex>
+
       <v-content>
         <v-container fluid>
           <nuxt />

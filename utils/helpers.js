@@ -1,3 +1,5 @@
+// import nomnoml from 'nomnoml'
+
 // convert hh:mm:ss to seconds
 exports.convertToSeconds = (time) => {
   if (time) {
@@ -335,4 +337,23 @@ exports.jsonToHTML = (txt) => {
   }
   chatHtml += ``
   return chatHtml
+}
+
+exports.nomnomlMd = (txt) => {
+  let json = this.markdownToJson(txt)
+
+  // prevent error if json is blank
+  if (json && json.length !== 0) {
+    try {
+      let nom = this.jsonToNom(json)
+      if (nom && nom.trim() !== '' && nom !== '[]') {
+        // return nomnoml.renderSvg(nom)
+      }
+    } catch (err) {
+      console.log(err)
+      return `Error: ${err}`
+    }
+  } else {
+    return ''
+  }
 }
