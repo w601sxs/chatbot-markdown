@@ -73,6 +73,7 @@ exports.markdownToJson = (markdown) => {
     let line = lines[i]
     const firstChar = line[0]
     const secondChar = line[1]
+    const lastChar = line[line.length - 1]
     // # for new thread
     if (firstChar === '#') {
       currentThread = line.match(/\S+/g)
@@ -80,12 +81,10 @@ exports.markdownToJson = (markdown) => {
         currentThread = currentThread[1]
       }
     }
-
     // find index of json in array
     let threadIdx = finalJson.findIndex((item, i) => {
       return item.thread === currentThread
     })
-
     // if it's a new thread..
     if (threadIdx < 0) {
       finalJson.push({
@@ -94,7 +93,6 @@ exports.markdownToJson = (markdown) => {
       })
       threadIdx = finalJson.length - 1
     }
-
     if (threadIdx >= 0) {
       let threadConvos = finalJson[threadIdx].convos
       let lastConvoInThread = threadConvos[threadConvos.length - 1] // to push quick replies
@@ -104,13 +102,11 @@ exports.markdownToJson = (markdown) => {
       let say
       let type = 'text'
       let from = 'bot'
-
       if (firstChar === '-') {
         // link []()
         let foundLink = line.match(/\[(.*?)\)/i)
         // images ![]()
         let foundImage = line.match(/!\[(.*?)\)/i)
-
         // if it's pure text...
         if (!foundImage && !foundLink) {
           // bot
@@ -129,10 +125,8 @@ exports.markdownToJson = (markdown) => {
         } else {
           let txt = line.match(/\[(.*?)\]/i)
           txt = txt ? txt[1] : ''
-
           let link = line.match(/\((.*?)\)/i)
           link = link ? link[1] : ''
-
           threadConvos.push({
             'say': txt,
             'url': link,
@@ -146,7 +140,7 @@ exports.markdownToJson = (markdown) => {
         // split into [text, payload]
         const idx = line.lastIndexOf(':')
         let split
-        let payload
+        let payload, openingText
         // if there's no ':', there's no payload
         if (idx >= 0) {
           // slice to remove first and last square brackets
@@ -163,23 +157,43 @@ exports.markdownToJson = (markdown) => {
         payload = split[1]
         const selected = payload.slice(-1) === '*'
         payload = payload.replace(/\*/g, '')
-
-        // change previous convo to quick reply
-        if (lastConvoInThread.type && !lastConvoInThread.type.includes('quick replies')) {
-          // [] : open ended question with quick replies
-          if (secondChar === ']') {
-            lastConvoInThread.type = 'ask quick replies'
-          } else {
-            lastConvoInThread.type = 'quick replies'
+        let groups = payload.match(/[^: ]+(.*?)/g)
+        if (groups) {
+          if (groups.length > 0) {
+            // join by space and remove {{ }}
+            openingText = groups.slice(1).join(' ').slice(2, -2)
           }
-          lastConvoInThread.replies = []
         }
-
-        lastConvoInThread.replies.push({
-          title: split[0],
-          payload: payload,
-          selected: selected
-        })
+        // change previous convo to quick reply
+        if (lastConvoInThread) {
+          if (lastConvoInThread.type && !lastConvoInThread.type.includes('quick replies')) {
+            // [] : open ended question with quick replies
+            if (secondChar === ']') {
+              lastConvoInThread.type = 'ask quick replies'
+            } else {
+              lastConvoInThread.type = 'quick replies'
+            }
+            lastConvoInThread.replies = []
+          }
+          lastConvoInThread.replies.push({
+            title: split[0],
+            payload: payload,
+            selected: selected,
+            openingText: openingText
+          })
+        }
+        // {} to call another flow
+      } else if (firstChar === '{' && lastChar === '}') {
+        finalJson[threadIdx].gotoFlow = line.match(/\{(.*?)\}/i)[1]
+        // : to go to next thread
+      } else if (firstChar === ':') {
+        let groups = line.match(/[^: ]+/g)
+        if (groups) {
+          finalJson[threadIdx].gotoThread = groups[0]
+          if (groups.length > 0) {
+            finalJson[threadIdx].openingText = groups.slice(1).join(' ').slice(2, -2)
+          }
+        }
       }
     }
   }

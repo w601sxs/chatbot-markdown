@@ -12,8 +12,6 @@ export const mutations = {
   'SET_MARKDOWN' (state, txt) {
     if (txt) {
       state.txt = txt
-      if (process.SERVER_BUILD) {
-      }
     }
   }
 }
