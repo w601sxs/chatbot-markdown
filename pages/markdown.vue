@@ -27,6 +27,7 @@ export default {
       },
       set (value) {
         this.$store.commit('SET_MARKDOWN', value)
+        window.localStorage.setItem(`chatMD.last`, value)
       }
     }
   }

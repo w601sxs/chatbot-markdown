@@ -1,4 +1,4 @@
- <template>
+<template>
   <v-layout row class="textArea mt-3">
     <v-flex xs12>
       <div v-html="nomnomlMd"></div>  

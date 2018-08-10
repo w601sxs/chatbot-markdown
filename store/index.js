@@ -13,7 +13,6 @@ export const mutations = {
     if (txt) {
       state.txt = txt
       if (process.SERVER_BUILD) {
-        window.localStorage.setItem(`chatMD.last`, txt)
       }
     }
   }
