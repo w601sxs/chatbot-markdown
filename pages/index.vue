@@ -44,6 +44,10 @@ export default {
 
 <style>
 
+.textArea {
+  overflow-x: scroll;
+}
+
 .tabs__items {
   overflow: scroll;
   position: relative;
