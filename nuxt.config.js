@@ -1,8 +1,8 @@
 
 module.exports = {
-  /*
-  ** Headers of the page
-  */
+  router: {
+    middleware: 'initTxt'
+  },
   head: {
     title: 'Chatbot Markdown',
     meta: [

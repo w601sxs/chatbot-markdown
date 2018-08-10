@@ -14,7 +14,9 @@ import { jsonToHTML } from '~/utils/helpers'
 export default {
   methods: {
     jsonToHTML () {
-      return jsonToHTML(this.$store.state.txt)
+      if (this.$store.state.txt) {
+        return jsonToHTML(this.$store.state.txt)
+      }
     }
   }
 }

@@ -15,9 +15,19 @@
 
 <script>
 export default {
-  data () {
-    return {
-      txt: this.$store.state.txt
+  // data () {
+  //   return {
+  //     txt: this.$store.state.txt
+  //   }
+  // },
+  computed: {
+    txt: {
+      get () {
+        return this.$store.state.txt
+      },
+      set (value) {
+        this.$store.commit('SET_MARKDOWN', value)
+      }
     }
   }
 }

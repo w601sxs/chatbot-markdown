@@ -64,18 +64,9 @@
     },
     data () {
       return {
-        clipped: false,
-        drawer: true,
-        fixed: false,
-        items: [
-          { icon: 'apps', title: 'Welcome', to: '/' },
-          { icon: 'bubble_chart', title: 'Inspire', to: '/inspire' }
-        ],
-        miniVariant: false,
-        right: true,
-        rightDrawer: false,
-        title: 'Vuetify.js'
       }
+    },
+    computed: {
     },
     methods: {
       onCopy: (e) => {
@@ -87,12 +78,25 @@
     },
     beforeMount () {
       const query = this.$route.query.q
-      if (query) {
-        this.$store.commit(decodeURI(query))
-      } else {
-        let lastMarkdown = window.localStorage.getItem('chatMD.last')
-        if (lastMarkdown && lastMarkdown !== '' && this.txt !== '') {
-          this.$store.commit(lastMarkdown)
+      console.log(query)
+      if (this.$store.state.txt === '') {
+        if (query) {
+          this.$store.commit('SET_MARKDOWN', decodeURI(query))
+        } else {
+          let lastMarkdown = window.localStorage.getItem('chatMD.last')
+          if (lastMarkdown && lastMarkdown !== '') {
+            this.$store.commit('SET_MARKDOWN', lastMarkdown)
+          } else {
+            const def = `# 1
+  - Good morning
+  - Ummm.... hello? 
+  [Fine]: 2
+  [Bad :(]: 3*
+  
+  # 2
+  -- I'm fine, thanks!`
+            this.$store.commit('SET_MARKDOWN', def)
+          }
         }
       }
     }

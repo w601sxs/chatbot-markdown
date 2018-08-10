@@ -280,7 +280,8 @@ exports.jsonToHTML = (txt) => {
 
   // for each thread ...
   for (let i = 0; i < threadsArr.length; i++) {
-    const currentThreadName = threadsArr[i].toString()
+    console.log('threadsArr[i]: ', threadsArr[i])
+    const currentThreadName = threadsArr[i] ? threadsArr[i].toString() : ''
     // find index of json in array
     let threadIdx = flow.findIndex((item, i) => {
       return item.thread.toString() === currentThreadName
