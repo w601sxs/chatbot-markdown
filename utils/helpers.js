@@ -227,54 +227,91 @@ exports.formatMarkdown = (convoObj) => {
 
 exports.jsonToNom = (js) => {
   let md = `
-  #fill: #fff; #fdf6e3
-  #lineWidth: 2
-  #fillArrows: true
-  #zoom: 0.8
-  #.quickreply: fill=#fcedb5 visual=roundrect
-  #.openended: fill=#fcedb5 visual=input
-  
+    #fill: #fff; #fdf6e3
+    #lineWidth: 2
+    #fillArrows: true
+    #spacing: 40
+    #padding: 8
+    #.quickreply: fill=#fcedb5 visual=roundrect
+    #.openended: fill=#fcedb5 visual=input
+    #.callflow: fill=#dedede visual=receiver bold
   `
-  // for each thread in flow
+  // for each thread
   for (let i = 0; i < js.length; i++) {
     let thread = js[i]
     let key = thread['thread']
-
-    md += `\n[${key}\n]`
+    // calls another flow and link back here
+    if (thread.gotoFlow) {
+      let diagType = 'callflow'
+      md += `\n[<${diagType}> ${key}|\n`
+      if (thread.gotoFlow && thread.gotoFlow !== key) {
+        md += `${thread.gotoFlow}]\n`
+      } else {
+        md += `]`
+      }
+      // if (thread.gotoThread) {
+      //   md += `  \n[${key}] -> [${thread.gotoThread}]\n`
+      // }
+    } else {
+      md += `\n[${key}\n]`
+    }
     // for each convo in thread
     for (let j = 0; j < thread.convos.length; j++) {
       let convo = thread.convos[j]
+      // console.log('>> convo: ', convo)
       let prevConvo = thread.convos[j - 1]
       // if there's text after quick replies, skip as there's no way to reach it
-      if (prevConvo && prevConvo.type.includes('quick replies')) { } else {
-        // create quick replies with payload
-        if (convo && convo.type.includes('quick replies')) {
-          for (let r = 0; r < convo.replies.length; r++) {
-            let reply = convo.replies[r]
-            let title = `${key}: ${reply.title}`
-            let diagType = 'quickreply'
-
-            // open ended question
-            if (reply.title === '') {
-              diagType = 'openended'
-              title = `${key}: User answer`
-            }
-
-            // msg -> quick replies
-            md += `\n[${key}] -> [<${diagType}> ${title}]\n`
-
-            // quick replies payload -> thread
-            // skip if payload is empty. Causes error in nomnoml
-            if (reply.payload && reply.payload !== '' && reply.payload !== '[]') {
+      if (prevConvo && prevConvo.type.includes('quick replies')) {
+        break
+      }
+      // normal bot conversation
+      if (convo.say && convo.from === 'bot') {
+        // remove ] at the end of the string
+        md = md.slice(0, -1) + `| ` + `${convo.say}\n]`
+      }
+      // create quick replies with payload
+      if (convo && convo.type.includes('quick replies')) {
+        for (let r = 0; r < convo.replies.length; r++) {
+          let reply = convo.replies[r]
+          let title = `${key}: ${reply.title}`
+          let diagType = 'quickreply'
+          // open ended question
+          if (reply.title === '') {
+            diagType = 'openended'
+            title = `${key}: User answer`
+          }
+          // msg -> quick replies
+          md += `\n[${key}] -> [<${diagType}> ${title}]\n`
+          // quick replies payload -> thread
+          // skip if payload is empty. Causes error in nomnoml
+          if (reply.payload && reply.payload !== '' && reply.payload !== '[]') {
+            // if has openingText, the payload is just the text before {{ }}.
+            // the text inside {{ }} is used a opening text for customization
+            if (reply.openingText) {
+              let groups = reply.payload.match(/[^: ]+/g)
+              let payload, openingText
+              if (groups) {
+                payload = groups[0]
+                if (groups.length > 0) {
+                  // join by space and remove {{ }}
+                  openingText = groups.slice(1).join(' ').slice(2, -2)
+                }
+              }
+              md += `\n[${title}] -- [${openingText}]\n`
+              md += `\n[${openingText}] -> [${payload}]\n`
+            } else {
               md += `\n[${title}] -> [${reply.payload}]\n`
             }
           }
-        } else {
-          if (convo.say && convo.from === 'bot') {
-            // remove ] at the end of the string
-            md = md.slice(0, -1) + `| ` + `${convo.say}\n]`
-          }
         }
+      }
+    }
+    if (thread.gotoThread) {
+      if (thread.openingText) {
+        md += `\n[${key}] -- [${thread.openingText}]\n`
+        md += `\n[${thread.openingText}] -> [${thread.gotoThread}]\n`
+      } else {
+        md = md + `\n[${key}] -> [${thread.gotoThread}]`
       }
     }
     md += `\n`
