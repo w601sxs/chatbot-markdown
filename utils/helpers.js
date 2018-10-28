@@ -1,7 +1,7 @@
 // import nomnoml from 'nomnoml'
 
 // convert hh:mm:ss to seconds
-exports.convertToSeconds = (time) => {
+export const convertToSeconds = (time) => {
   if (time) {
     let a = time.split(':')
     // minutes are worth 60 seconds. Hours are worth 60 minutes.
@@ -12,7 +12,7 @@ exports.convertToSeconds = (time) => {
 }
 
 // prettify seconds (e.g. 180 to 3m)
-exports.prettifySec = (time) => {
+export const prettifySec = (time) => {
   const res = new Date(time * 1000).toISOString().substr(11, 12)
   const arr = res.split(':')
   const hh = arr[0] === '00' ? '' : `${Number(arr[0])}h `
@@ -22,7 +22,7 @@ exports.prettifySec = (time) => {
 }
 
 // time since
-exports.timeSince = (date) => {
+export const timeSince = (date) => {
   var seconds = Math.floor((new Date() - date) / 1000)
   var interval = Math.floor(seconds / 31536000)
 
@@ -56,16 +56,35 @@ exports.timeSince = (date) => {
   }
 }
 
-exports.pickRandom = (array) => array[Math.floor(Math.random() * array.length)]
+export const pickRandom = (array) => array[Math.floor(Math.random() * array.length)]
 
-exports.validateEmail = (email) => {
+export const validateEmail = (email) => {
   const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
   return re.test(email)
 }
 
 // creates an array of flow which contains: thread > convo
 // [{ thread: 1, convo: [{ say: '', type: '', 'from: ''}, ...]}, { thread: 2, ...}]
-exports.markdownToJson = (markdown) => {
+export const markdownToJson = (markdown) => {
+  const extensionLists = {
+    video: ['m4v', 'avi', 'mpg', 'mp4', 'webm'],
+    image: ['jpg', 'gif', 'bmp', 'png'],
+    audio: ['mp3', 'wav', '3gp', 'aac', 'wma'],
+    file: ['doc', 'docx', 'xls', 'xlsx', 'pdf', 'txt', 'zip', 'rar']
+  }
+
+  // returns the extension type or 'undefined' if not found
+  function getExtension (fName) {
+    const ext = fName.substr((fName.lastIndexOf('.') + 1))
+
+    for (let i = 0; i < Object.keys(extensionLists).length; i++) {
+      let key = Object.keys(extensionLists)[i]
+      if (extensionLists[key].includes(ext)) {
+        return key
+      }
+    }
+  }
+
   let finalJson = []
   let lines = markdown.split(/\n|\r/g)
   let currentThread
@@ -100,61 +119,48 @@ exports.markdownToJson = (markdown) => {
       // - for bot
       // -- for user reply (only for simulation)
       let say
+      let extension
       let type = 'text'
       let from = 'bot'
       if (firstChar === '-') {
-        // link []()
-        let foundLink = line.match(/\[(.*?)\)/i)
-        // images ![]()
-        let foundImage = line.match(/!\[(.*?)\)/i)
-        // if it's pure text...
-        if (!foundImage && !foundLink) {
-          // bot
-          if (line[1] === ' ') {
-            say = line.substring(2)
-            // human
-          } else if (line[1] === '-' & line[2] === ' ') {
-            say = line.substring(3)
-            from = 'user'
-          }
-          threadConvos.push({
-            'say': say,
-            'type': type,
-            'from': from
-          })
-        } else {
-          let txt = line.match(/\[(.*?)\]/i)
-          txt = txt ? txt[1] : ''
-          let link = line.match(/\((.*?)\)/i)
-          link = link ? link[1] : ''
-          threadConvos.push({
-            'say': txt,
-            'url': link,
-            'type': foundImage ? 'image' : 'url',
-            'from': from
-          })
+        // bot
+        if (line[1] === ' ') {
+          say = line.substring(2)
+          extension = getExtension(say)
+        // human
+        } else if (line[1] === '-' & line[2] === ' ') {
+          say = line.substring(3)
+          from = 'user'
         }
-        // [ : quick replies
+        threadConvos.push({
+          'say': say,
+          'type': extension || type,
+          'from': from
+        })
+      // []: quick replies
       } else if (firstChar === '[') {
         // payload number is after ':'
-        // split into [text, payload]
         const idx = line.lastIndexOf(':')
-        let split
+        let txt, img
         let payload, openingText
         // if there's no ':', there's no payload
-        if (idx >= 0) {
-          // slice to remove first and last square brackets
-          split = [
-            line.slice(0, idx).slice(1, -1),
-            line.slice(idx + 1).trim()
-          ]
+        if (idx < 0) {
+          txt = line.slice(1, -1)
+          payload = ''
         } else {
-          split = [
-            line.slice(1, -1),
-            ''
-          ]
+          // if text has image [text](image)
+          const hasImage = line.slice(0, idx).match(/\[(.*?)\)/i)
+          if (hasImage) {
+            const txtInSquareBracket = line.match(/\[(.*?)\]/i)
+            txt = txtInSquareBracket ? txtInSquareBracket[1] : ''
+            const imgInBracket = line.match(/\((.*?)\)/i)
+            img = imgInBracket ? imgInBracket[1] : ''
+          } else {
+            txt = line.slice(0, idx).slice(1, -1)
+          }
+          // slice to remove first and last square brackets
+          payload = line.slice(idx + 1).trim()
         }
-        payload = split[1]
         const selected = payload.slice(-1) === '*'
         payload = payload.replace(/\*/g, '')
         let groups = payload.match(/[^: ]+(.*?)/g)
@@ -176,13 +182,14 @@ exports.markdownToJson = (markdown) => {
             lastConvoInThread.replies = []
           }
           lastConvoInThread.replies.push({
-            title: split[0],
+            title: txt,
+            image_url: img,
             payload: payload,
             selected: selected,
             openingText: openingText
           })
         }
-        // {} to call another flow
+      // {} to call another flow
       } else if (firstChar === '{' && lastChar === '}') {
         finalJson[threadIdx].gotoFlow = line.match(/\{(.*?)\}/i)[1]
         // : to go to next thread
@@ -201,7 +208,7 @@ exports.markdownToJson = (markdown) => {
   return finalJson
 }
 
-exports.formatMarkdown = (convoObj) => {
+export const formatMarkdown = (convoObj) => {
   // link []()
   // find between [ and ) to replace with href HTML
   if (convoObj) {
@@ -225,7 +232,7 @@ exports.formatMarkdown = (convoObj) => {
   }
 }
 
-exports.jsonToNom = (js) => {
+export const jsonToNom = (js) => {
   let md = `
     #fill: #fff; #fdf6e3
     #lineWidth: 2
@@ -320,7 +327,7 @@ exports.jsonToNom = (js) => {
   return md
 }
 
-exports.jsonToHTML = (txt) => {
+export const jsonToHTML = (txt) => {
   const flow = this.markdownToJson(txt)
   let chatHtml = ``
   // sort threads ascending
@@ -391,7 +398,7 @@ exports.jsonToHTML = (txt) => {
   return chatHtml
 }
 
-exports.nomnomlMd = (txt) => {
+export const nomnomlMd = (txt) => {
   let json = this.markdownToJson(txt)
 
   // prevent error if json is blank
