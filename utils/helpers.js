@@ -63,6 +63,7 @@ export const validateEmail = (email) => {
   return re.test(email)
 }
 
+// TODO: receipt type
 // creates an array of flow which contains: thread > convo
 // [{ thread: 1, convo: [{ say: '', type: '', 'from: ''}, ...]}, { thread: 2, ...}]
 export const markdownToJson = (markdown) => {
@@ -149,6 +150,8 @@ export const markdownToJson = (markdown) => {
   let currentThread
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i]
+    console.log(i)
+    console.log(`%c ${line}`, 'color: #ffa500')
     const firstChar = line[0]
     const secondChar = line[1]
     const lastChar = line[line.length - 1]
@@ -171,9 +174,18 @@ export const markdownToJson = (markdown) => {
       })
       threadIdx = finalJson.length - 1
     }
+    // if existing thread
     if (threadIdx >= 0) {
       let threadConvos = finalJson[threadIdx].convos
       let lastConvoInThread = threadConvos[threadConvos.length - 1] // to push quick replies
+      // console.log('>> lastConvo: ', lastConvoInThread)
+      let lastElementInPayload
+      if (lastConvoInThread && lastConvoInThread.payload && lastConvoInThread.payload.elements) {
+        let elements = lastConvoInThread.payload.elements
+        lastElementInPayload = elements[elements.length - 1]
+      }
+      // console.log('lastConvoInThread: ', lastConvoInThread)
+      // console.log('lastElementInPayload: ', lastElementInPayload)
       // let lastConvo = thread[thread.length - 1]
       // - for bot
       // -- for user reply (only for simulation)
@@ -196,12 +208,70 @@ export const markdownToJson = (markdown) => {
           'type': extension || type,
           'from': from
         })
+      // === for list, generic or receipt
+      } else if (line.substr(0, 3) === '===') {
+        const typeText = line.match(/^=+(.*?)$/i)[1].trim()
+
+        // === is used to separate items in markdown
+        // if we're building a list, we'll have lastElement
+        if (lastElementInPayload) {
+          lastConvoInThread.payload.elements.push({})
+        } else {
+          let templateType, topElementStyle
+
+          switch (typeText) {
+            case 'list large':
+              templateType = 'list'
+              topElementStyle = 'large'
+              break
+            case 'list compact':
+              templateType = 'list'
+              topElementStyle = 'compact'
+              break
+            case 'generic':
+              templateType = 'generic'
+              type = 'generic'
+              break
+            case 'receipt':
+              templateType = 'receipt'
+              break
+            default:
+              break
+          }
+          console.log('templateType: ', templateType)
+          threadConvos.push({
+            type: 'template',
+            payload: {
+              template_type: templateType,
+              top_element_style: topElementStyle,
+              elements: [{}]
+            }
+          })
+        }
       // <>: buttons
       } else if (firstChar === '<') {
         let json = splitTextAndPayload(line, 'buttons')
-        // change previous convo to buttons
-        if (lastConvoInThread) {
-          if (lastConvoInThread.type && !lastConvoInThread.type.includes('buttons')) {
+        // console.log(json)
+        // if has lastElement, we're building a list. So don't need to change the lastConvo type
+        if (lastElementInPayload) {
+          if ('title' in lastElementInPayload) {
+            if (!lastElementInPayload.buttons) {
+              lastElementInPayload.buttons = []
+            }
+            // lists have default action
+            if (json.title === 'default') {
+              lastElementInPayload.default_action = json
+            } else {
+              lastElementInPayload.buttons.push(json)
+            }
+          } else {
+            lastConvoInThread.payload.elements.splice(-1, 1)
+            lastConvoInThread.payload.buttons = []
+            lastConvoInThread.payload.buttons.push(json)
+          }
+        } else if (lastConvoInThread) {
+          // change previous convo to buttons
+          if (lastConvoInThread.type && !['list', 'generic', 'receipt', 'buttons'].includes(lastConvoInThread.type)) {
             lastConvoInThread.type = 'buttons'
             lastConvoInThread.payload = []
           }
@@ -235,6 +305,20 @@ export const markdownToJson = (markdown) => {
             finalJson[threadIdx].openingText = groups.slice(1).join(' ').slice(2, -2)
           }
         }
+      // continue to build the list
+      } else if (lastConvoInThread && lastConvoInThread.type === 'template') {
+        const regexRes = line.match(/(.*?):(.*?)$/i)
+        let key = regexRes[1]
+        const value = regexRes[2]
+
+        switch (key) {
+          case 'image':
+            key = 'image_url'
+            break
+          default:
+            break
+        }
+        lastElementInPayload[key] = value
       }
     }
   }
