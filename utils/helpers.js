@@ -85,6 +85,65 @@ export const markdownToJson = (markdown) => {
     }
   }
 
+  // takes a string and returns an object of
+  // { title, image_url, payload, selected, openingText }
+  const splitTextAndPayload = (line, type = 'quick_replies') => {
+    // payload number is after ':'
+    const idx = line.lastIndexOf(':')
+    let txt, url
+    let payload, openingText
+    // if there's no ':', there's no payload
+    if (idx < 0) {
+      txt = line.slice(1, -1)
+      payload = ''
+    } else {
+      // if text has image [text](url)
+      const hasUrl = line.slice(0, idx).match(/\[|<(.*?)\)/i)
+      if (hasUrl) {
+        if (type === 'buttons') {
+          const txtInAngleBracket = line.match(/<(.*?)>/i)
+          txt = txtInAngleBracket ? txtInAngleBracket[1] : ''
+        } else {
+          const txtInSquareBracket = line.match(/\[(.*?)\]/i)
+          txt = txtInSquareBracket ? txtInSquareBracket[1] : ''
+        }
+        const urlInBracket = line.match(/\((.*?)\)/i)
+        url = urlInBracket ? urlInBracket[1] : null
+      } else {
+        txt = line.slice(0, idx).slice(1, -1)
+      }
+      // slice to remove first and last square brackets
+      payload = line.slice(idx + 1).trim()
+    }
+    const selected = payload.slice(-1) === '*'
+    payload = payload.replace(/\*/g, '')
+    let groups = payload.match(/[^: ]+(.*?)/g)
+    if (groups) {
+      if (groups.length > 0) {
+        // join by space and remove {{ }}
+        openingText = groups.slice(1).join(' ').slice(2, -2)
+      }
+    }
+    let obj = {
+      title: txt,
+      payload: payload !== '' ? payload : null,
+      selected: selected,
+      openingText: openingText
+    }
+    // check if url is image
+    if (url) {
+      if (url === '#') {
+        obj.type = 'phone_number'
+      } else if (getExtension(url) === 'image') {
+        obj.image_url = url
+      } else {
+        obj.type = 'web_url'
+        obj.url = url
+      }
+    }
+    return obj
+  }
+
   let finalJson = []
   let lines = markdown.split(/\n|\r/g)
   let currentThread
@@ -137,39 +196,20 @@ export const markdownToJson = (markdown) => {
           'type': extension || type,
           'from': from
         })
+      // <>: buttons
+      } else if (firstChar === '<') {
+        let json = splitTextAndPayload(line, 'buttons')
+        // change previous convo to buttons
+        if (lastConvoInThread) {
+          if (lastConvoInThread.type && !lastConvoInThread.type.includes('buttons')) {
+            lastConvoInThread.type = 'buttons'
+            lastConvoInThread.payload = []
+          }
+          lastConvoInThread.payload.push(json)
+        }
       // []: quick replies
       } else if (firstChar === '[') {
-        // payload number is after ':'
-        const idx = line.lastIndexOf(':')
-        let txt, img
-        let payload, openingText
-        // if there's no ':', there's no payload
-        if (idx < 0) {
-          txt = line.slice(1, -1)
-          payload = ''
-        } else {
-          // if text has image [text](image)
-          const hasImage = line.slice(0, idx).match(/\[(.*?)\)/i)
-          if (hasImage) {
-            const txtInSquareBracket = line.match(/\[(.*?)\]/i)
-            txt = txtInSquareBracket ? txtInSquareBracket[1] : ''
-            const imgInBracket = line.match(/\((.*?)\)/i)
-            img = imgInBracket ? imgInBracket[1] : ''
-          } else {
-            txt = line.slice(0, idx).slice(1, -1)
-          }
-          // slice to remove first and last square brackets
-          payload = line.slice(idx + 1).trim()
-        }
-        const selected = payload.slice(-1) === '*'
-        payload = payload.replace(/\*/g, '')
-        let groups = payload.match(/[^: ]+(.*?)/g)
-        if (groups) {
-          if (groups.length > 0) {
-            // join by space and remove {{ }}
-            openingText = groups.slice(1).join(' ').slice(2, -2)
-          }
-        }
+        let json = splitTextAndPayload(line)
         // change previous convo to quick reply
         if (lastConvoInThread) {
           if (lastConvoInThread.type && !lastConvoInThread.type.includes('quick replies')) {
@@ -181,13 +221,7 @@ export const markdownToJson = (markdown) => {
             }
             lastConvoInThread.replies = []
           }
-          lastConvoInThread.replies.push({
-            title: txt,
-            image_url: img,
-            payload: payload,
-            selected: selected,
-            openingText: openingText
-          })
+          lastConvoInThread.replies.push(json)
         }
       // {} to call another flow
       } else if (firstChar === '{' && lastChar === '}') {
