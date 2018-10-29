@@ -5,7 +5,7 @@
   "author": "Shawn <l@cupbots.com>",
   "private": true,
   "scripts": {
-    "dev": "nuxt",
+    "dev": "PORT=6060 nuxt",
     "build": "nuxt build",
     "start": "nuxt start",
     "generate": "nuxt generate"

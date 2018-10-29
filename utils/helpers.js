@@ -208,6 +208,9 @@ export const markdownToJson = (markdown) => {
           'type': extension || type,
           'from': from
         })
+      // if blank line
+      } else if (line.trim() === '') {
+        continue
       // === for list, generic or receipt
       } else if (line.substr(0, 3) === '===') {
         const typeText = line.match(/^=+(.*?)$/i)[1].trim()
