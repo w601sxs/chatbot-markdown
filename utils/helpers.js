@@ -157,8 +157,11 @@ export const markdownToJson = (markdown) => {
     const lastChar = line[line.length - 1]
     // # for new thread
     if (firstChar === '#') {
-      currentThread = line.match(/[^#\s](.*?)$/g)[0]
-      if (currentThread) currentThread = currentThread.trim()
+      currentThread = line.match(/[^#\s](.*?)$/g)
+
+      if (currentThread) {
+        currentThread = currentThread[0].trim()
+      }
     }
     // find index of json in array
     let threadIdx = finalJson.findIndex((item, i) => {
