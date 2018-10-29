@@ -189,6 +189,7 @@ export const markdownToJson = (markdown) => {
       // console.log('lastElementInPayload: ', lastElementInPayload)
       // let lastConvo = thread[thread.length - 1]
       // - for bot
+      // - - for variations
       // -- for user reply (only for simulation)
       let say
       let extension
@@ -197,18 +198,39 @@ export const markdownToJson = (markdown) => {
       if (firstChar === '-') {
         // bot
         if (line[1] === ' ') {
-          say = line.substring(2)
-          extension = getExtension(say)
+          // - - for variations
+          if (line[2] === '-') {
+            const str = line.match(/[^-\s-\s](.*?)$/g)[0]
+            // if last convo is an array, add to it as we're building variations
+            if (Array.isArray(lastConvoInThread.say)) {
+              lastConvoInThread.say.push(str)
+            } else {
+              say = [str]
+              threadConvos.push({
+                'say': say,
+                'type': extension || type,
+                'from': from
+              })
+            }
+          } else {
+            say = line.substring(2)
+            extension = getExtension(say)
+            threadConvos.push({
+              'say': say,
+              'type': extension || type,
+              'from': from
+            })
+          }
         // human
         } else if (line[1] === '-' & line[2] === ' ') {
           say = line.substring(3)
           from = 'user'
+          threadConvos.push({
+            'say': say,
+            'type': extension || type,
+            'from': from
+          })
         }
-        threadConvos.push({
-          'say': say,
-          'type': extension || type,
-          'from': from
-        })
       // if blank line
       } else if (line.trim() === '') {
         continue
