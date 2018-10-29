@@ -157,10 +157,8 @@ export const markdownToJson = (markdown) => {
     const lastChar = line[line.length - 1]
     // # for new thread
     if (firstChar === '#') {
-      currentThread = line.match(/\S+/g)
-      if (currentThread[1]) {
-        currentThread = currentThread[1]
-      }
+      currentThread = line.match(/[^#\s](.*?)$/g)[0]
+      if (currentThread) currentThread = currentThread.trim()
     }
     // find index of json in array
     let threadIdx = finalJson.findIndex((item, i) => {
@@ -311,17 +309,19 @@ export const markdownToJson = (markdown) => {
       // continue to build the list
       } else if (lastConvoInThread && lastConvoInThread.type === 'template') {
         const regexRes = line.match(/(.*?):(.*?)$/i)
-        let key = regexRes[1]
-        const value = regexRes[2]
+        if (regexRes) {
+          let key = regexRes[1]
+          const value = regexRes[2]
 
-        switch (key) {
-          case 'image':
-            key = 'image_url'
-            break
-          default:
-            break
+          switch (key) {
+            case 'image':
+              key = 'image_url'
+              break
+            default:
+              break
+          }
+          lastElementInPayload[key] = value
         }
-        lastElementInPayload[key] = value
       }
     }
   }
