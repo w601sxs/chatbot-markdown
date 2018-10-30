@@ -123,6 +123,8 @@ export const markdownToJson = (markdown, eventId) => {
     }
     const selected = payload.slice(-1) === '*'
     payload = payload.replace(/\*/g, '')
+    // join eventID to payload
+    if (eventId) payload = eventId + '__' + payload
     let groups = payload.match(/[^: ]+(.*?)/g)
 
     if (groups) {
@@ -306,15 +308,20 @@ export const markdownToJson = (markdown, eventId) => {
             lastConvoInThread.payload.buttons.push(json)
           }
         } else if (lastConvoInThread) {
-          // change previous convo to buttons
+          // if last convo is a button type, add to it,
+          // else create a new convo of buttons
           if (lastConvoInThread.type && !['list', 'generic', 'receipt', 'buttons'].includes(lastConvoInThread.type)) {
-            lastConvoInThread.type = 'buttons'
-            lastConvoInThread.payload = {
-              template_type: 'button',
-              buttons: []
-            }
+            threadConvos.push({
+              type: 'buttons',
+              from: 'bot',
+              payload: {
+                template_type: 'buttons',
+                buttons: [json]
+              }
+            })
+          } else {
+            lastConvoInThread.payload.buttons.push(json)
           }
-          lastConvoInThread.payload.buttons.push(json)
         }
         // []: quick replies
       } else if (firstChar === '[') {
