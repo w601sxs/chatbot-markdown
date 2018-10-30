@@ -63,32 +63,37 @@ export const validateEmail = (email) => {
   return re.test(email)
 }
 
-// TODO: receipt type
-// creates an array of flow which contains: thread > convo
-// [{ thread: 1, convo: [{ say: '', type: '', 'from: ''}, ...]}, { thread: 2, ...}]
-export const markdownToJson = (markdown) => {
+// returns the extension type or 'undefined' if not found
+export const getExtension = (fName) => {
   const extensionLists = {
     video: ['m4v', 'avi', 'mpg', 'mp4', 'webm'],
     image: ['jpg', 'gif', 'bmp', 'png'],
     audio: ['mp3', 'wav', '3gp', 'aac', 'wma'],
     file: ['doc', 'docx', 'xls', 'xlsx', 'pdf', 'txt', 'zip', 'rar']
   }
+  const ext = fName.substr((fName.lastIndexOf('.') + 1))
 
-  // returns the extension type or 'undefined' if not found
-  function getExtension (fName) {
-    const ext = fName.substr((fName.lastIndexOf('.') + 1))
-
-    for (let i = 0; i < Object.keys(extensionLists).length; i++) {
-      let key = Object.keys(extensionLists)[i]
-      if (extensionLists[key].includes(ext)) {
-        return key
-      }
+  for (let i = 0; i < Object.keys(extensionLists).length; i++) {
+    let key = Object.keys(extensionLists)[i]
+    if (extensionLists[key].includes(ext)) {
+      return key
     }
   }
+}
+
+/**
+ * Converts a TXT markdown into JSON. Attach an eventId to each message if exists.
+ *
+ * @param {string} markdown: A TXT markdown to be converted into JSON
+ * @param {string} eventId: Use to attach to each message 'eventId' property. This is for the front-end to know we're in an event.
+ */
+// TODO: receipt type
+export const markdownToJson = (markdown, eventId) => {
+  console.log('* markdownToJson *')
 
   // takes a string and returns an object of
   // { title, image_url, payload, selected, openingText }
-  const splitTextAndPayload = (line, type = 'quick_replies') => {
+  const splitTextAndPayload = (line, eventId, type = 'quick_replies') => {
     // payload number is after ':'
     const idx = line.lastIndexOf(':')
     let txt, url
@@ -119,6 +124,7 @@ export const markdownToJson = (markdown) => {
     const selected = payload.slice(-1) === '*'
     payload = payload.replace(/\*/g, '')
     let groups = payload.match(/[^: ]+(.*?)/g)
+
     if (groups) {
       if (groups.length > 0) {
         // join by space and remove {{ }}
@@ -129,7 +135,8 @@ export const markdownToJson = (markdown) => {
       title: txt,
       payload: payload !== '' ? payload : null,
       selected: selected,
-      openingText: openingText
+      openingText: openingText,
+      eventId: eventId
     }
     // check if url is image
     if (url) {
@@ -142,6 +149,9 @@ export const markdownToJson = (markdown) => {
         obj.url = url
       }
     }
+    if (type === 'buttons' && !obj.type) {
+      obj.type = 'postback'
+    }
     return obj
   }
 
@@ -150,8 +160,8 @@ export const markdownToJson = (markdown) => {
   let currentThread
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i]
-    console.log(i)
-    console.log(`%c ${line}`, 'color: #ffa500')
+    // console.log(i)
+    // console.log(`%c ${line}`, 'color: #ffa500')
     const firstChar = line[0]
     const secondChar = line[1]
     const lastChar = line[line.length - 1]
@@ -189,14 +199,12 @@ export const markdownToJson = (markdown) => {
       // console.log('lastElementInPayload: ', lastElementInPayload)
       // let lastConvo = thread[thread.length - 1]
       // - for bot
-      // - - for variations
       // -- for user reply (only for simulation)
       let say
       let extension
       let type = 'text'
       let from = 'bot'
       if (firstChar === '-') {
-        // bot
         if (line[1] === ' ') {
           // - - for variations
           if (line[2] === '-') {
@@ -207,34 +215,34 @@ export const markdownToJson = (markdown) => {
             } else {
               say = [str]
               threadConvos.push({
-                'say': say,
-                'type': extension || type,
-                'from': from
+                say: say,
+                type: extension || type,
+                from: from
               })
             }
           } else {
             say = line.substring(2)
             extension = getExtension(say)
             threadConvos.push({
-              'say': say,
-              'type': extension || type,
-              'from': from
+              say: say,
+              type: extension || type,
+              from: from
             })
           }
-        // human
+          // human
         } else if (line[1] === '-' & line[2] === ' ') {
           say = line.substring(3)
           from = 'user'
           threadConvos.push({
-            'say': say,
-            'type': extension || type,
-            'from': from
+            say: say,
+            type: extension || type,
+            from: from
           })
         }
-      // if blank line
+        // if blank line
       } else if (line.trim() === '') {
         continue
-      // === for list, generic or receipt
+        // === for list, generic or receipt
       } else if (line.substr(0, 3) === '===') {
         const typeText = line.match(/^=+(.*?)$/i)[1].trim()
 
@@ -264,19 +272,21 @@ export const markdownToJson = (markdown) => {
             default:
               break
           }
-          console.log('templateType: ', templateType)
+          // console.log('templateType: ', templateType)
           threadConvos.push({
             type: 'template',
+            from: from,
             payload: {
               template_type: templateType,
               top_element_style: topElementStyle,
               elements: [{}]
-            }
+            },
+            eventId: eventId
           })
         }
-      // <>: buttons
+        // <>: buttons
       } else if (firstChar === '<') {
-        let json = splitTextAndPayload(line, 'buttons')
+        let json = splitTextAndPayload(line, eventId, 'buttons')
         // console.log(json)
         // if has lastElement, we're building a list. So don't need to change the lastConvo type
         if (lastElementInPayload) {
@@ -299,13 +309,16 @@ export const markdownToJson = (markdown) => {
           // change previous convo to buttons
           if (lastConvoInThread.type && !['list', 'generic', 'receipt', 'buttons'].includes(lastConvoInThread.type)) {
             lastConvoInThread.type = 'buttons'
-            lastConvoInThread.payload = []
+            lastConvoInThread.payload = {
+              template_type: 'button',
+              buttons: []
+            }
           }
-          lastConvoInThread.payload.push(json)
+          lastConvoInThread.payload.buttons.push(json)
         }
-      // []: quick replies
+        // []: quick replies
       } else if (firstChar === '[') {
-        let json = splitTextAndPayload(line)
+        let json = splitTextAndPayload(line, eventId, 'quick_replies')
         // change previous convo to quick reply
         if (lastConvoInThread) {
           if (lastConvoInThread.type && !lastConvoInThread.type.includes('quick replies')) {
@@ -319,7 +332,7 @@ export const markdownToJson = (markdown) => {
           }
           lastConvoInThread.replies.push(json)
         }
-      // {} to call another flow
+        // {} to call another flow
       } else if (firstChar === '{' && lastChar === '}') {
         finalJson[threadIdx].gotoFlow = line.match(/\{(.*?)\}/i)[1]
         // : to go to next thread
@@ -331,7 +344,7 @@ export const markdownToJson = (markdown) => {
             finalJson[threadIdx].openingText = groups.slice(1).join(' ').slice(2, -2)
           }
         }
-      // continue to build the list
+        // continue to build the list
       } else if (lastConvoInThread && lastConvoInThread.type === 'template') {
         const regexRes = line.match(/(.*?):(.*?)$/i)
         if (regexRes) {
