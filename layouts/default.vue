@@ -66,8 +66,6 @@
       return {
       }
     },
-    computed: {
-    },
     methods: {
       onCopy: (e) => {
         alert('URL copied!')

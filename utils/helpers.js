@@ -87,10 +87,8 @@ export const getExtension = (fName) => {
  * @param {string} markdown: A TXT markdown to be converted into JSON
  * @param {string} eventId: Use to attach to each message 'eventId' property. This is for the front-end to know we're in an event.
  */
-// TODO: receipt type
+/* eslint-disable prefer-const */
 export const markdownToJson = (markdown, eventId) => {
-  console.log('* markdownToJson *')
-
   // takes a string and returns an object of
   // { title, image_url, payload, selected, openingText }
   const splitTextAndPayload = (line, eventId, type = 'quick_replies') => {
@@ -106,7 +104,7 @@ export const markdownToJson = (markdown, eventId) => {
       // if text has image [text](url)
       const hasUrl = line.slice(0, idx).match(/\[|<(.*?)\)/i)
       if (hasUrl) {
-        if (type === 'buttons') {
+        if (type === 'button') {
           const txtInAngleBracket = line.match(/<(.*?)>/i)
           txt = txtInAngleBracket ? txtInAngleBracket[1] : ''
         } else {
@@ -125,12 +123,16 @@ export const markdownToJson = (markdown, eventId) => {
     payload = payload.replace(/\*/g, '')
     // join eventID to payload
     if (eventId) payload = eventId + '__' + payload
-    let groups = payload.match(/[^: ]+(.*?)/g)
+
+    const groups = payload.match(/[^: ]+(.*?)/g)
 
     if (groups) {
       if (groups.length > 0) {
         // join by space and remove {{ }}
-        openingText = groups.slice(1).join(' ').slice(2, -2)
+        openingText = groups
+          .slice(1)
+          .join(' ')
+          .slice(2, -2)
       }
     }
     let obj = {
@@ -151,17 +153,18 @@ export const markdownToJson = (markdown, eventId) => {
         obj.url = url
       }
     }
-    if (type === 'buttons' && !obj.type) {
+    if (type === 'button' && !obj.type) {
       obj.type = 'postback'
     }
     return obj
   }
 
   let finalJson = []
-  let lines = markdown.split(/\n|\r/g)
+  const lines = markdown.split(/\n|\r/g)
   let currentThread
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i]
+    // console.log(line)
     // console.log(i)
     // console.log(`%c ${line}`, 'color: #ffa500')
     const firstChar = line[0]
@@ -193,7 +196,11 @@ export const markdownToJson = (markdown, eventId) => {
       let lastConvoInThread = threadConvos[threadConvos.length - 1] // to push quick replies
       // console.log('>> lastConvo: ', lastConvoInThread)
       let lastElementInPayload
-      if (lastConvoInThread && lastConvoInThread.payload && lastConvoInThread.payload.elements) {
+      if (
+        lastConvoInThread &&
+        lastConvoInThread.payload &&
+        lastConvoInThread.payload.elements
+      ) {
         let elements = lastConvoInThread.payload.elements
         lastElementInPayload = elements[elements.length - 1]
       }
@@ -212,7 +219,7 @@ export const markdownToJson = (markdown, eventId) => {
           if (line[2] === '-') {
             const str = line.match(/[^-\s-\s](.*?)$/g)[0]
             // if last convo is an array, add to it as we're building variations
-            if (Array.isArray(lastConvoInThread.say)) {
+            if (lastConvoInThread && Array.isArray(lastConvoInThread.say)) {
               lastConvoInThread.say.push(str)
             } else {
               say = [str]
@@ -232,7 +239,7 @@ export const markdownToJson = (markdown, eventId) => {
             })
           }
           // human
-        } else if (line[1] === '-' & line[2] === ' ') {
+        } else if ((line[1] === '-') & (line[2] === ' ')) {
           say = line.substring(3)
           from = 'user'
           threadConvos.push({
@@ -288,7 +295,7 @@ export const markdownToJson = (markdown, eventId) => {
         }
         // <>: buttons
       } else if (firstChar === '<') {
-        let json = splitTextAndPayload(line, eventId, 'buttons')
+        let json = splitTextAndPayload(line, eventId, 'button')
         // console.log(json)
         // if has lastElement, we're building a list. So don't need to change the lastConvo type
         if (lastElementInPayload) {
@@ -310,12 +317,17 @@ export const markdownToJson = (markdown, eventId) => {
         } else if (lastConvoInThread) {
           // if last convo is a button type, add to it,
           // else create a new convo of buttons
-          if (lastConvoInThread.type && !['list', 'generic', 'receipt', 'buttons'].includes(lastConvoInThread.type)) {
+          if (
+            lastConvoInThread.type &&
+            !['list', 'generic', 'receipt', 'button'].includes(
+              lastConvoInThread.type
+            )
+          ) {
             threadConvos.push({
-              type: 'buttons',
+              type: 'button',
               from: 'bot',
               payload: {
-                template_type: 'buttons',
+                template_type: 'button',
                 buttons: [json]
               }
             })
@@ -328,7 +340,10 @@ export const markdownToJson = (markdown, eventId) => {
         let json = splitTextAndPayload(line, eventId, 'quick_replies')
         // change previous convo to quick reply
         if (lastConvoInThread) {
-          if (lastConvoInThread.type && !lastConvoInThread.type.includes('quick replies')) {
+          if (
+            lastConvoInThread.type &&
+            !lastConvoInThread.type.includes('quick replies')
+          ) {
             // [] : open ended question with quick replies
             if (secondChar === ']') {
               lastConvoInThread.type = 'ask quick replies'
@@ -348,7 +363,10 @@ export const markdownToJson = (markdown, eventId) => {
         if (groups) {
           finalJson[threadIdx].gotoThread = groups[0]
           if (groups.length > 0) {
-            finalJson[threadIdx].openingText = groups.slice(1).join(' ').slice(2, -2)
+            finalJson[threadIdx].openingText = groups
+              .slice(1)
+              .join(' ')
+              .slice(2, -2)
           }
         }
         // continue to build the list
@@ -493,67 +511,83 @@ export const jsonToNom = (js) => {
   return md
 }
 
-export const jsonToHTML = (txt) => {
-  const flow = this.markdownToJson(txt)
+export const jsonToHTML = txt => {
+  const flow = markdownToJson(txt)
   let chatHtml = ``
   // sort threads ascending
   const threadsArr = flow.map(item => item.thread).sort()
   let goToThread = ''
   // for skipping thread if one quick reply is selected
-  let threadsToSkip = []
+  const threadsToSkip = []
 
+  // console.log('threadsArr: ', threadsArr)
+  // console.log('flow: ', flow)
   // for each thread ...
   for (let i = 0; i < threadsArr.length; i++) {
-    console.log('threadsArr[i]: ', threadsArr[i])
-    const currentThreadName = threadsArr[i] ? threadsArr[i].toString() : ''
-    // find index of json in array
-    let threadIdx = flow.findIndex((item, i) => {
-      return item.thread.toString() === currentThreadName
-    })
-    const allConvos = flow[threadIdx].convos
-
-    // for each conversation in thread...
-    for (let j = 0; j < allConvos.length; j++) {
-      const convo = allConvos[j]
-      const prevConvo = allConvos[j - 1]
-
-      // skip all conversation after quick reply because it's impossible to reach it
-      if (prevConvo && prevConvo.type.includes('quick replies')) { } else {
-        if (goToThread !== '') {
-          if (currentThreadName !== goToThread) {
-            continue
-          } else {
-            goToThread = ''
-          }
+    if (threadsArr[i]) {
+      const currentThreadName = threadsArr[i].toString()
+      // find index of json in array
+      const threadIdx = flow.findIndex((item, i) => {
+        if (item.thread) {
+          return item.thread.toString() === currentThreadName
         }
-        // chatbot demo will only pick out the selected quick reply (with * at the end)
-        if (!threadsToSkip.includes(currentThreadName)) {
-          if (convo.type === 'quick replies') {
-            if (convo.say !== '') {
-              chatHtml += `<div class="msg"><div class="msg-content bot">${this.formatMarkdown(convo)}</div></div>`
-            }
-            chatHtml += `<div class="msg-quick-replies">`
-            // loop for each quick reply
-            for (let r = 0; r < convo.replies.length; r++) {
-              const reply = convo.replies[r]
-              // skip open ended markdown [] by checking if reply.title is empty
-              if (reply.title && reply.title !== '') {
-                chatHtml += `<button type="button" class="quick-replies-btn${reply.selected ? ' selected' : ''}">${reply.title}</button>`
-                // go to thread and skip the non-selected threads by adding them to `threadsToSkip`
-              }
-              // if quick reply is selected, go to thread. Skip the other threads.
-              if (reply.selected) {
-                goToThread = reply.payload
-              } else {
-                threadsToSkip.push(reply.payload)
-              }
-            }
-            chatHtml += `</div>`
-          } else {
-            if (convo.from === 'bot') {
-              chatHtml += `<div class="msg"><div class="msg-content bot">${this.formatMarkdown(convo)}</div></div>`
+      })
+      const allConvos = flow[threadIdx].convos
+
+      // for each conversation in thread...
+      for (let j = 0; j < allConvos.length; j++) {
+        const convo = allConvos[j]
+        const prevConvo = allConvos[j - 1]
+        // console.log(convo)
+
+        // skip all conversation after quick reply because it's impossible to reach it
+        if (prevConvo && prevConvo.type.includes('quick replies')) {
+        } else {
+          if (goToThread !== '') {
+            if (currentThreadName !== goToThread) {
+              continue
             } else {
-              chatHtml += `<div class="msg"><div class="msg-content human">${this.formatMarkdown(convo)}</div></div>`
+              goToThread = ''
+            }
+          }
+          // chatbot demo will only pick out the selected quick reply (with * at the end)
+          if (!threadsToSkip.includes(currentThreadName)) {
+            if (convo.type === 'quick replies') {
+              if (convo.say !== '') {
+                chatHtml += `<div class="msg"><div class="msg-content bot">${formatMarkdown(
+                  convo
+                )}</div></div>`
+              }
+              chatHtml += `<div class="msg-quick-replies">`
+              // loop for each quick reply
+              for (let r = 0; r < convo.replies.length; r++) {
+                const reply = convo.replies[r]
+                // skip open ended markdown [] by checking if reply.title is empty
+                if (reply.title && reply.title !== '') {
+                  chatHtml += `<button type="button" class="quick-replies-btn${
+                    reply.selected ? ' selected' : ''
+                  }">${reply.title}</button>`
+                  // go to thread and skip the non-selected threads by adding them to `threadsToSkip`
+                }
+                // if quick reply is selected, go to thread. Skip the other threads.
+                if (reply.selected) {
+                  goToThread = reply.payload
+                } else {
+                  threadsToSkip.push(reply.payload)
+                }
+              }
+              chatHtml += `</div>`
+            } else if (convo.type === 'image') {
+              console.log('is image!')
+              chatHtml += `<div class="msg"><div class="msg-content bot"><img class="msg-image" src="${convo.say}"></img></div></div>`
+            } else if (convo.from === 'bot') {
+              chatHtml += `<div class="msg"><div class="msg-content bot">${formatMarkdown(
+                convo
+              )}</div></div>`
+            } else {
+              chatHtml += `<div class="msg"><div class="msg-content human">${formatMarkdown(
+                convo
+              )}</div></div>`
             }
           }
         }

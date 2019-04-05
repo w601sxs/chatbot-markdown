@@ -33,7 +33,7 @@ export default {
         { text: 'Flow Map', value: 'flow', icon: 'home', route: '/' },
         { text: 'Markdown', value: 'markdown', icon: 'favorite', route: '/markdown' },
         { text: 'Chat Demo', value: 'chat', icon: 'person', route: '/chat' },
-        { text: 'JSON', value: 'chat', icon: 'person', route: '/json' }
+        { text: 'JSON', value: 'json', icon: 'person', route: '/json' }
       ]
     }
   }

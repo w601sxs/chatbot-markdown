@@ -15,7 +15,7 @@ module.exports = {
       { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons' },
       {
         rel: 'stylesheet',
-        href: 'https://fonts.googleapis.com/css?family=Nunito:300,400,700,900|Material+Icons'
+        href: 'https://fonts.googleapis.com/css?family=Muli:800|Source+Sans+Pro:400,700|Material+Icons'
       }
     ]
   },
