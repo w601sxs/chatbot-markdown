@@ -578,7 +578,6 @@ export const jsonToHTML = txt => {
               }
               chatHtml += `</div>`
             } else if (convo.type === 'image') {
-              console.log('is image!')
               chatHtml += `<div class="msg"><div class="msg-content bot"><img class="msg-image" src="${convo.say}"></img></div></div>`
             } else if (convo.from === 'bot') {
               chatHtml += `<div class="msg"><div class="msg-content bot">${formatMarkdown(
