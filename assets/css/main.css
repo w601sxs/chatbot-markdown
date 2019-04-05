@@ -211,3 +211,11 @@ td {
   max-height: 110px;
   min-width: 110px;
 }
+
+body {
+  overflow-y: scroll;
+}
+
+body::-webkit-scrollbar {
+  width: 0
+}

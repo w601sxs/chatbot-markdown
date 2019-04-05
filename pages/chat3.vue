@@ -114,7 +114,7 @@
     </v-layout>
   </section>
   <v-layout>
-    <v-flex class="blue lighten-4 pa-5">
+    <v-flex class="white pa-5">
       <div class="headline">Settings</div>
       <v-text-field v-model="companyName" label="Company name" />
       <v-text-field v-model="bgColor" label="Background color" />
