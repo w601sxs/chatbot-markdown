@@ -34,11 +34,20 @@
     },
     beforeMount () {
       const query = this.$route.query.q
-      console.log(query)
       if (this.$store.state.txt === '') {
         if (query) {
           this.$store.commit('SET_MARKDOWN', decodeURI(query))
         } else {
+          let lastMarkdown2 = window.localStorage.getItem('chatMD.last2')
+          if (lastMarkdown2 && lastMarkdown2 !== '') {
+            this.$store.commit('SET_MARKDOWN2', lastMarkdown2)
+          }
+
+          let lastMarkdown3 = window.localStorage.getItem('chatMD.last3')
+          if (lastMarkdown3 && lastMarkdown3 !== '') {
+            this.$store.commit('SET_MARKDOWN3', lastMarkdown3)
+          }
+
           let lastMarkdown = window.localStorage.getItem('chatMD.last')
           if (lastMarkdown && lastMarkdown !== '') {
             this.$store.commit('SET_MARKDOWN', lastMarkdown)
