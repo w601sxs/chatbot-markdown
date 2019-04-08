@@ -219,3 +219,12 @@ body {
 body::-webkit-scrollbar {
   width: 0
 }
+
+blockquote p {
+  display: inline;
+}
+
+p {
+  line-height: 1.6;
+  margin: 1.2em 0;
+}
