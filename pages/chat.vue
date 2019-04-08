@@ -12,7 +12,7 @@
                     <img :src="avatarUrl" alt="avatar" @error="imageLoadError"/>
                   </v-avatar>
                   <v-toolbar-title>
-                    <div class="title font-weight-bold">
+                    <div class="title">
                       {{ companyName }}
                     </div>
                   </v-toolbar-title>
