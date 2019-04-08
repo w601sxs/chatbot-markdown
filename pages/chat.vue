@@ -28,7 +28,7 @@
         </div>
       </v-flex>
       <v-flex md8 class="mt-5 ml-5">
-        <div class="display-2 white--text">
+        <div class="display-1 white--text">
           {{ headline }}
           <div>{{ subheadline }}</div>
           <!-- <pre class="menu">{{ subheadline }}</pre> -->
