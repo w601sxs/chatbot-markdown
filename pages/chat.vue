@@ -71,6 +71,14 @@
         box
         label="Body text"
       />
+
+      <v-text-field
+        class="textField"
+        name="input-1"
+        rows="10"
+        textarea
+        v-model="txt"
+      ></v-text-field>
     </v-flex>
   </v-layout>
 </div>
@@ -91,6 +99,17 @@ export default {
       headline: `Shawn`,
       subheadline: '',
       copy: 'What if you could keep customers happy, bring in more sales and have more time to do what you love?\n\nYou can by hiring chatbots to automate your business.\n\nCan I show you a demo for your company?'
+    }
+  },
+  computed: {
+    txt: {
+      get () {
+        return this.$store.state.txt
+      },
+      set (value) {
+        this.$store.commit('SET_MARKDOWN', value)
+        window.localStorage.setItem(`chatMD.last`, value)
+      }
     }
   },
   methods: {
