@@ -43,7 +43,7 @@
               <img class="ml-2" src="https://res.cloudinary.com/cupbots/image/upload/v1554346787/site-icon.png">
             </v-avatar>
             <div class="white--text">
-              l@cupbots.com
+              L@cupbots.com
             </div>
           </v-chip>
         </div>
