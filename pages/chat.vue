@@ -9,7 +9,7 @@
               <v-flex>
                 <v-toolbar flat color="white">
                   <v-avatar class="ml-1">
-                    <img :src="avatarUrl" alt="avatar" @error="imageLoadError"/>
+                    <img :src="avatarUrl" alt="avatar"/>
                   </v-avatar>
                   <v-toolbar-title>
                     <div class="title">
@@ -101,9 +101,6 @@ export default {
       if (this.$store.state.txt) {
         return jsonToHTML(this.$store.state.txt)
       }
-    },
-    imageLoadError () {
-      this.avatarUrl = 'https://res.cloudinary.com/cupbots/image/upload/ar_1:1,c_fill,g_auto,h_200/v1538878851/default_avatar.png'
     }
   }
 }
