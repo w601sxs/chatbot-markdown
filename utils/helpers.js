@@ -552,7 +552,12 @@ export const jsonToHTML = txt => {
           }
           // chatbot demo will only pick out the selected quick reply (with * at the end)
           if (!threadsToSkip.includes(currentThreadName)) {
-            if (convo.type === 'quick replies') {
+            if (convo.type === 'button') {
+              for (let i = 0; i < convo.payload.buttons.length; i++) {
+                const btn = convo.payload.buttons[i]
+                chatHtml += `<div class="msg msg-button"><button type="button" class="btn">${btn.title}</button></div>`
+              }
+            } else if (convo.type === 'quick replies') {
               if (convo.say !== '') {
                 chatHtml += `<div class="msg"><div class="msg-content bot">${formatMarkdown(
                   convo

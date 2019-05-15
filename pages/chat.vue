@@ -95,7 +95,7 @@ export default {
     return {
       companyName: 'Cupbots',
       bgColor: '#333',
-      avatarUrl: 'https://res.cloudinary.com/cupbots/image/upload/v1554347303/nclol7iji8lyjf62hjuz.png',
+      avatarUrl: 'https://res.cloudinary.com/cupbots/image/upload/v1554346787/site-icon.png',
       headline: `Shawn`,
       subheadline: '',
       copy: 'What if you could keep customers happy, bring in more sales and have more time to do what you love?\n\nYou can by hiring chatbots to automate your business.\n\nCan I show you a demo for your company?'
