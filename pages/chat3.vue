@@ -187,13 +187,63 @@ export default {
       avatarUrl: 'https://res.cloudinary.com/cupbots/image/upload/v1554347303/nclol7iji8lyjf62hjuz.png',
       headline: `Shawn`,
       subheadline: `This could be your chatbot.`,
-      copy: 'Body copy text',
-      title1: 'Title1',
-      subtitle1: 'Subtitle1 Subtitle1 \n\nSubtitle1 Subtitle1 Subtitle1 Subtitle1',
-      title2: 'Title2',
-      subtitle2: 'Subtitle2',
-      title3: 'Title3',
-      subtitle3: 'Subtitle3'
+      copy: 'Body copy text'
+    }
+  },
+  computed: {
+    title1: {
+      get () {
+        return this.$store.state.title1
+      },
+      set (value) {
+        this.$store.commit('SET_TITLE1', value)
+        window.localStorage.setItem(`chatMD.title1`, value)
+      }
+    },
+    title2: {
+      get () {
+        return this.$store.state.title2
+      },
+      set (value) {
+        this.$store.commit('SET_TITLE2', value)
+        window.localStorage.setItem(`chatMD.title2`, value)
+      }
+    },
+    title3: {
+      get () {
+        return this.$store.state.title3
+      },
+      set (value) {
+        this.$store.commit('SET_TITLE3', value)
+        window.localStorage.setItem(`chatMD.title3`, value)
+      }
+    },
+    subtitle1: {
+      get () {
+        return this.$store.state.subtitle1
+      },
+      set (value) {
+        this.$store.commit('SET_SUBTITLE1', value)
+        window.localStorage.setItem(`chatMD.subtitle1`, value)
+      }
+    },
+    subtitle2: {
+      get () {
+        return this.$store.state.subtitle2
+      },
+      set (value) {
+        this.$store.commit('SET_SUBTITLE2', value)
+        window.localStorage.setItem(`chatMD.subtitle2`, value)
+      }
+    },
+    subtitle3: {
+      get () {
+        return this.$store.state.subtitle3
+      },
+      set (value) {
+        this.$store.commit('SET_SUBTITLE3', value)
+        window.localStorage.setItem(`chatMD.subtitle3`, value)
+      }
     }
   },
   methods: {
