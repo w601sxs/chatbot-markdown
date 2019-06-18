@@ -3,7 +3,7 @@
     <v-flex xs12>
       <v-text-field
         class="textField"
-        name="input-1"
+        name="markdown-1"
         rows="10"
         autofocus
         textarea
@@ -13,7 +13,7 @@
     <v-flex xs12>
       <v-text-field
         class="textField"
-        name="input-1"
+        name="markdown-2"
         rows="10"
         autofocus
         textarea
@@ -23,7 +23,7 @@
     <v-flex xs12>
       <v-text-field
         class="textField"
-        name="input-1"
+        name="markdown-3"
         rows="10"
         autofocus
         textarea
