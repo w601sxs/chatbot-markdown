@@ -4,15 +4,15 @@
     <v-layout>
       <v-flex md4 wrap>
         <div class="title white--text mb-3 pl-3">{{ title1 }}</div>
-        <div class="white--text pl-3"><pre class="body-2 menu">{{ subtitle1 }}</pre></div>
+        <div class="white--text pl-3"><pre class="subheading menu">{{ subtitle1 }}</pre></div>
       </v-flex>
       <v-flex md4>
         <div class="title white--text mb-2 pl-3">{{ title2 }}</div>
-        <div class="white--text pl-3"><pre class="body-2 menu">{{ subtitle2 }}</pre></div>
+        <div class="white--text pl-3"><pre class="subheading menu">{{ subtitle2 }}</pre></div>
       </v-flex>
       <v-flex md4>
         <div class="title white--text mb-2 pl-3">{{ title3 }}</div>
-        <div class="white--text pl-3"><pre class="body-2 menu">{{ subtitle3 }}</pre></div>
+        <div class="white--text pl-3"><pre class="subheading menu">{{ subtitle3 }}</pre></div>
       </v-flex>
     </v-layout>
     <v-layout>
